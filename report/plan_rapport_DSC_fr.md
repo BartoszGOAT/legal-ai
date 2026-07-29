@@ -64,26 +64,61 @@ et les références `.bib` à citer (`report/references.bib`). Contenu rédigé 
 - Limites connues de chaque famille de métriques, avant présentation des choix retenus (§6)
 
 ## 6. Expérimentations
+
+**Démarche** : chaque sous-section ci-dessous est formulée explicitement comme
+Question de recherche → Hypothèse (H0/H1) → Test statistique → Résultat →
+Conclusion, plutôt que comme une simple analyse exploratoire. C'est la
+démarche scientifique classique (voir aussi §5) appliquée systématiquement,
+pas seulement pour la comparaison principale des 4 configurations.
+
 ### 6.1 Protocole (4 configurations C1-C4)
 - Tableau `tables/config_description.tex`
 ### 6.2 Retrieval
 - Recall@k / MRR / nDCG, mpnet vs e5-large vs BM25 vs hybride — Fig. `figures/recall_at_k_comparison.pdf`
 ### 6.3 Génération — résultats principaux
+- **Q** : le fine-tuning apporte-t-il un gain réel par rapport au RAG seul (question de recherche n°2) ?
+- **H0** : pas de différence significative entre C2 et C3 sur ROUGE-L/BERTScore/citation exacte.
 - ROUGE-L, BERTScore, IC bootstrap 95% — Fig. `figures/config_comparison_ci.pdf`
-- Tests de significativité appariés, correction Holm-Bonferroni — `tables/pairwise_tests.tex`
+- **Test** : bootstrap apparié + Wilcoxon signé, correction Holm-Bonferroni (comparaisons multiples) — `tables/pairwise_tests.tex`
 ### 6.4 Fiabilité : citation et hallucination (cœur du sujet)
 - Exactitude de citation (precision/recall/exact match), taux d'hallucination d'article
 - Tableau comparatif 4 configs — `tables/citation_hallucination.tex`
 ### 6.5 Analyse par sous-groupe de lois (réponse directe à la remarque d'A. Habrard)
+- **Q** : le RAG et le fine-tuning se comportent-ils différemment selon le sous-domaine juridique ?
+- **H0** : l'écart de performance C2 vs C3 est constant à travers les catégories (pas d'interaction config×catégorie).
 - Heatmap configuration × catégorie juridique — Fig. `figures/heatmap_category.pdf`
+- **Test** : modèle de régression avec terme d'interaction config×catégorie (cf. §6.10), significativité du terme d'interaction
 ### 6.6 Capacité d'abstention
 - 50 questions hors-domaine, taux d'abstention correcte/fausse — `tables/abstention.tex`
 ### 6.7 Coût pratique
 - Temps entraînement/inférence, VRAM, taille adaptateurs — `tables/cost_comparison.tex`
-### 6.8 Ablations (P1, si temps disponible)
-- Retrieval (BM25/dense/hybride/reranker), k, chunking, rang LoRA, courbe d'apprentissage
-### 6.9 Évaluation humaine (arène, P1)
-- Accord inter-annotateurs (Kappa de Cohen), comparaison C2 vs C3
+### 6.8 Ablations
+- Retrieval (BM25/dense/hybride/reranker), k, chunking, rang/cibles LoRA, courbe d'apprentissage (+ extension données synthétiques), spécialiste Code Civil vs généraliste
+- Chaque ablation formulée en H0 (ex. **k** : "H0 : au-delà de k=5, ajouter des fragments n'améliore pas la fiabilité — Derby LLM signale que 10 fragments saturent le prompt, à vérifier empiriquement")
+### 6.9 Évaluation humaine (arène)
+- Accord inter-annotateurs (Kappa de Cohen par paire + distribution d'accord unanime/majoritaire/aucun à 3 annotateurs, façon Derby LLM Fig. 7)
+- **Classement par modèle Bradley-Terry** (méthode utilisée par Chatbot Arena/LMSYS, dont Derby LLM et nous nous inspirons tous deux) à partir des votes par paires — donne un score de force relative sur une échelle unique plutôt que des taux de victoire par paire isolés — Fig. `figures/bradley_terry_ranking.pdf`
+- **Q** : le jugement automatique (LLM-judge, métriques de surface, fidélité) est-il un proxy valide du jugement humain ?
+- **Test** : corrélation de Spearman entre score du juge LLM et issue du vote arène sur les questions communes
+
+### 6.10 Prédiction supervisée de la fiabilité (approche apprentissage automatique)
+- **Q** : peut-on prédire, à partir de caractéristiques observables avant génération (longueur de
+  la question, nombre d'articles gold, catégorie, régularité de format d'identifiant, configuration,
+  score de similarité du retrieval), le risque qu'une réponse soit peu fiable (citation incorrecte
+  ou hallucination) ? Inspiré de la littérature sur la *quality estimation* sans référence en TAL
+  (à la COMET-QE) et de la *sélection avec option de rejet* (*selective prediction*), réimplémenté
+  pour notre tâche — pas copié.
+- **H0** : un classifieur entraîné sur ces caractéristiques ne fait pas mieux qu'un modèle qui
+  prédit toujours la classe majoritaire (AUC = 0.5).
+- **Méthode** : régression logistique (interprétable, coefficients directement lisibles) et
+  Random Forest (capture les interactions non-linéaires), validation croisée à 5 plis stratifiée
+  vu le nombre limité d'observations (~888 lignes = 222 questions × 4 configs)
+- **Sorties** : courbe ROC + AUC, matrice de confusion, importance des variables (quel facteur
+  domine : la configuration ? la difficulté de la question ? le retrieval ?), courbe de calibration
+  (les probabilités prédites sont-elles fiables ?) — Fig. `figures/quality_prediction_*.pdf`
+- **Discussion** : si la configuration domine largement les autres variables, cela renforce la
+  conclusion principale (le choix RAG/fine-tuning importe plus que les caractéristiques de la
+  question) ; si une interaction config×difficulté ressort, cela nuance §6.5
 
 ## 7. Analyse d'erreurs
 - Taxonomie (9 catégories, cf. brief §4.7), matrice type d'erreur × configuration

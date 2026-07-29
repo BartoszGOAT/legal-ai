@@ -205,26 +205,39 @@ def compute_metrics(answers, reference_answers, gold_refs, valid_article_refs, r
     _, _, bert_f1 = bert_score_fn(
         answers, reference_answers, model_type="distilbert-base-multilingual-cased", lang="fr", verbose=False
     )
-    citation_precisions, citation_recalls, citation_exact = [], [], []
+    # Precision/recall par question ne sont pas toujours definis (ex: predicted et
+    # gold tous deux vides -> NaN), mais exact_match et hallucination le sont
+    # TOUJOURS (0.0/1.0) -- necessaires par question, pas seulement en moyenne,
+    # pour le test d'hypothese format/citation (citation_format_analysis.py) et
+    # le modele de prediction de fiabilite (quality_prediction.py).
+    citation_precisions_per_q, citation_recalls_per_q, citation_exact_per_q = [], [], []
     hallucinated_flags = []
     for ans, refs in zip(answers, gold_refs):
         predicted = set(re.findall(ARTICLE_CITATION_REGEX, ans))
         gold = set(refs)
         if predicted or gold:
             tp = len(predicted & gold)
-            citation_precisions.append(tp / len(predicted) if predicted else 0.0)
-            citation_recalls.append(tp / len(gold) if gold else float("nan"))
-            citation_exact.append(float(predicted == gold))
-        hallucinated_flags.append(any(c not in valid_article_refs for c in predicted))
+            citation_precisions_per_q.append(tp / len(predicted) if predicted else 0.0)
+            citation_recalls_per_q.append(tp / len(gold) if gold else float("nan"))
+            citation_exact_per_q.append(float(predicted == gold))
+        else:
+            citation_precisions_per_q.append(float("nan"))
+            citation_recalls_per_q.append(float("nan"))
+            citation_exact_per_q.append(1.0)  # rien a citer, rien cite -> correct par convention
+        hallucinated_flags.append(float(any(c not in valid_article_refs for c in predicted)))
     return {
         "rouge_l_f1_mean": float(np.mean(rouge_scores)),
         "rouge_l_f1_per_question": rouge_scores,
         "bertscore_f1_mean": float(np.mean(bert_f1.tolist())),
         "bertscore_f1_per_question": bert_f1.tolist(),
-        "citation_precision_mean": float(np.nanmean(citation_precisions)) if citation_precisions else None,
-        "citation_recall_mean": float(np.nanmean(citation_recalls)) if citation_recalls else None,
-        "citation_exact_match_rate": float(np.mean(citation_exact)) if citation_exact else None,
+        "citation_precision_mean": float(np.nanmean(citation_precisions_per_q)) if citation_precisions_per_q else None,
+        "citation_recall_mean": float(np.nanmean(citation_recalls_per_q)) if citation_recalls_per_q else None,
+        "citation_exact_match_rate": float(np.mean(citation_exact_per_q)) if citation_exact_per_q else None,
         "hallucination_rate": float(np.mean(hallucinated_flags)),
+        "citation_precision_per_question": citation_precisions_per_q,
+        "citation_recall_per_question": citation_recalls_per_q,
+        "citation_exact_match_per_question": citation_exact_per_q,
+        "hallucination_per_question": hallucinated_flags,
     }
 
 

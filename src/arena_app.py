@@ -166,6 +166,79 @@ def compute_inter_annotator_agreement(config_a: str, config_b: str, annotators: 
     return results
 
 
+def compute_bradley_terry_ranking(pairs: list[tuple[str, str]] = PRIORITY_PAIRS) -> dict:
+    """Classement des configurations à partir de TOUS les votes d'arène
+    disponibles (toutes paires, tous annotateurs), par modèle de Bradley-Terry
+    -- la méthode utilisée par Chatbot Arena/LMSYS (dont Derby LLM et nous nous
+    inspirons tous deux pour le protocole d'arène), réimplémentée ici via une
+    estimation par maximum de vraisemblance (pas copiée).
+
+    P(i bat j) = exp(s_i) / (exp(s_i) + exp(s_j)). Donne un score de force
+    relative sur une échelle unique, plus interprétable qu'un taux de victoire
+    par paire isolée quand plusieurs configurations sont en jeu. Un match nul
+    compte pour 0.5 victoire de chaque côté ; "aucune" (neither) est exclu
+    (ne renseigne pas sur la force relative des deux réponses).
+    """
+    import numpy as np
+    import pandas as pd
+    from scipy.optimize import minimize
+
+    out_dir = config.RESULTS_DIR / "arena_votes"
+    configs_involved = sorted({c for pair in pairs for c in pair})
+    idx = {c: i for i, c in enumerate(configs_involved)}
+    n = len(configs_involved)
+    wins = np.zeros((n, n))  # wins[i, j] = nb de victoires (ponderees) de i sur j
+
+    n_votes_used = 0
+    for config_a, config_b in pairs:
+        for path in out_dir.glob(f"arena_{config_a}_vs_{config_b}_*.csv"):
+            df = pd.read_csv(path)
+            for _, row in df.iterrows():
+                if row["choice"] == "neither":
+                    continue
+                winner_cfg = None
+                if row["choice"] == "tie":
+                    wins[idx[row["left_config"]], idx[row["right_config"]]] += 0.5
+                    wins[idx[row["right_config"]], idx[row["left_config"]]] += 0.5
+                elif row["choice"] == "left":
+                    winner_cfg = row["left_config"]
+                elif row["choice"] == "right":
+                    winner_cfg = row["right_config"]
+                if winner_cfg is not None:
+                    loser_cfg = row["right_config"] if winner_cfg == row["left_config"] else row["left_config"]
+                    wins[idx[winner_cfg], idx[loser_cfg]] += 1.0
+                n_votes_used += 1
+
+    if n_votes_used == 0:
+        return {"error": "Aucun vote d'arène trouvé dans results/arena_votes/"}
+
+    def neg_log_likelihood(strengths):
+        s = np.concatenate([[0.0], strengths])  # ancre la premiere config a 0 (identifiabilite)
+        ll = 0.0
+        for i in range(n):
+            for j in range(n):
+                if wins[i, j] > 0:
+                    ll += wins[i, j] * (s[i] - np.logaddexp(s[i], s[j]))
+        return -ll
+
+    x0 = np.zeros(n - 1)
+    result = minimize(neg_log_likelihood, x0, method="BFGS")
+    strengths = np.concatenate([[0.0], result.x])
+    # Normalise pour lisibilite (comme un score Elo, echelle arbitraire)
+    strengths_display = 1000 + 400 * (strengths - strengths.mean())
+
+    ranking = sorted(
+        [{"config": c, "strength_bt": float(strengths[idx[c]]), "score_elo_like": float(strengths_display[idx[c]])} for c in configs_involved],
+        key=lambda r: -r["strength_bt"],
+    )
+    return {
+        "ranking": ranking,
+        "n_votes_used": n_votes_used,
+        "converged": bool(result.success),
+        "note": "config non presente dans une comparaison d'arene = absente du classement (ex: C1 si jamais oppose)",
+    }
+
+
 def compute_full_agreement_distribution(config_a: str, config_b: str, annotators: list[str]) -> dict:
     """Distribution d'accord entre TOUS les annotateurs sur chaque question
     (unanime / majoritaire / aucun accord), pas seulement par paire.
