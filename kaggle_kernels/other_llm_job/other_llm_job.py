@@ -23,7 +23,7 @@ import urllib.request
 from pathlib import Path
 
 subprocess.run(
-    [sys.executable, "-m", "pip", "install", "-q", "-U", "bitsandbytes", "accelerate", "rouge_score", "bert_score"],
+    [sys.executable, "-m", "pip", "install", "-q", "-U", "bitsandbytes", "accelerate", "rouge_score", "bert_score", "sentence-transformers"],
     check=True,
 )
 

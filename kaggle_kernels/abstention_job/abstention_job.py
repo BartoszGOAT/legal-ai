@@ -27,7 +27,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-U", "bitsandbytes", "accelerate"], check=True)
+subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-U", "bitsandbytes", "accelerate", "sentence-transformers"], check=True)
 
 import numpy as np
 import pandas as pd
