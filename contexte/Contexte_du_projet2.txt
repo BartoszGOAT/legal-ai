@@ -1,0 +1,119 @@
+Contexte du projet:
+
+[M1 DSC - UE Stage/TER] Proposition de sujet
+
+Bartosz Konior
+​Francois Jacquenet <Francois.Jacquenet@univ-st-etienne.fr>;​
+amaury.habrard@univ-st-etienne.fr​
+​
+Chaabane Ouammou​
+Monsieur,
+J'aimerais vous soumettre une proposition de sujet de TER, et vous demander s'il serait possible de le réaliser en binôme avec OUAMMOU Chaabane, étudiant en M1 MLDM.
+
+Je sais que nos masters sont différents bien que nous possèdons une grande partie de cours en communs.
+
+Notre sujet porterait sur la conception d'un assistant de question-answering juridique en français, construit à partir d'un LLM open-source, du type Mistral. L'idée centrale est de comparer deux approches d'adaptation au domaine juridique :
+
+Le fine-tuning par LoRA/QLoRA, qui consiste à spécialiser les paramètres du modèle sur un dataset, afin qu'il adopte le bon format de réponse et cite ses sources précisément.
+
+Le RAG (Retrieval-Augmented Generation), qui connecte le modèle à une base vectorielle de textes de loi français (Légifrance), lui permettant de consulter les articles pertinents en temps réel avant de générer sa réponse.
+
+L'objectif n'est pas seulement de construire ces deux systèmes, mais de les évaluer rigoureusement. On souhaite établir un benchmark comparatif en testant plusieurs modèles d'IA sur des datasets de référence, et une évaluation humaine structurée. On veut aussi analyser en profondeur les erreurs produites, les types de questions où le modèle hallucine, cas où il confond des systèmes juridiques différents, capacité à reconnaître ses limites.
+
+Ce sujet nous tient vraiment à cœur parce qu'il dépasse le cadre d'un simple projet technique. Il y a une vraie question de recherche derrière : est-ce qu'un petit modèle open-source spécialisé peut rivaliser avec un modèle généraliste de grande taille sur une tâche précise ? Et dans quel cas le fine-tuning apporte-t-il un gain réel par rapport au RAG seul ?
+
+Nous sommes bien sûr ouverts à toute remarque ou ajustement de votre part.
+
+Cordialement,
+Bartosz KONIOR, Chaabane OUAMMOU
+
+
+Francois Jacquenet<Francois.Jacquenet@univ-st-etienne.fr>
+​Bartosz Konior;​
+Chaabane Ouammou​
+​
+Amaury Habrard <amaury.habrard@univ-st-etienne.fr>​
+
+Bonjour,
+
+
+Amaury Habrard et moi sommes d'accord sur le principe pour que vous travailliez sur ce sujet de TER. Par contre il faut évidemment que le volume de travail consacré à l'étude et au développement des systèmes et expérimentations correspondent à celui de deux personnes à temps complet sur trois mois.
+
+
+Étant donné la date tardive de votre démarrage, vous ne pourrez soutenir votre TER qu'à la fin du mois d'août. Il y aura deux soutenances distinctes et deux rapports distincts qui respecteront respectivement les règles du M1 DSC pour Bartosz Konior et les règles du M1 MLDM pour Chaabane Ouammou.
+
+
+J'enverrai un second mail à Bartosz Konior pour lui donner les consignes spécifiques à la réalisation de son TER dans le cadre du M1 DSC.
+
+Amaury Habrard enverra un second mail à Chaabane Ouammou pour lui donner les consignes spécifiques à la réalisation de son TER dans le cadre du M1 MLDM.
+
+
+Bon courage !
+
+Amaury Habrard et François Jacquenet
+
+
+Francois Jacquenet<Francois.Jacquenet@univ-st-etienne.fr>
+​
+Bartosz Konior​
+
+reBonjour,
+
+
+En ce qui concerne votre évaluation dans le cadre du M1 DSC, il faudra donc m'envoyer chaque semaine un compte-rendu de ce que vous aurez fait durant la semaine écoulée. J'attends donc votre premier compte-rendu le jeudi 30 avril (le vendredi 1er mai étant férié).
+
+
+Comme votre TER se veut un peu orienté recherche, un accent important devra être porté sur l'état de l'art. Il faut donc commencer à lire de nombreux articles scientifiques (et pas des articles de vulgarisation du domaine) qui ont trait au fine tuning, au RAG, à l'évaluation des systèmes de QA, aux datasets existants pour faire des expérimentations, aux comparaisons fine tuning/RAG déjà existantes, etc. A noter que j'ai travaillé au labo, en 2024, dans un projet avec Antoine Gourru et une entreprise lyonnaise où nous avons réalisé une telle comparaison avec une approche très pratique (https://hal.science/APIA-2024/hal-04638460v1, voir le pdf)... Bref, cet aspect état de l'art de votre travail devra être une partie importante de votre rapport, elle devra inclure de nombreuses références bibliographiques. Vous pouvez bien sûr réaliser diverses implémentations pour tester les concepts et ne pas faire uniquement que de la lecture pendant des semaines mais aussi faire de la pratique. Il faudra aussi justifier le choix du domaine juridique plutôt qu'un ou plusieurs autres...
+
+Une autre partie importante de votre travail/rapport sera la section expérimentations où là aussi il faudra présenter les techniques classiques d'évaluation d'outils basés sur l'IAG avant de montrer vos propres expérimentations.
+
+J'aimerais que votre rapport soit rédigé en LateX. Vous pourriez utiliser une plateforme du genre overleaf ou toute autre équivalente et m'envoyer le lien comme cela je pourrais observer de temps en temps la progression de votre rapport.
+
+
+Bon courage.
+
+François Jacquenet
+
+
+UTILISER UNIQUEMENT DES RESSOURCES GRATUIT ET DISPONIBLE SANS DEMANDE D'ACCES.
+
+
+
+
+
+
+in response to chaabane raport from Monthly Progress Report – June/July 2026Thanks for the report.
+Thanks for the report.
+
+The comparisons may appear limited since you make only one experiment,
+it could be interesting to extend the experimental setup to make tests
+on different test data/sampling to evaluate the average behavior of your
+model on more diverse tasks.
+
+Also, considering that you do not work alone, the global impression is
+that the work appears a bit limited, so be careful to expand a bit you
+work and follow the perspectives you mention in this report.
+
+Thank you for the progress report.
+
+Regarding the technical difficulties, you may imagine in the final
+report to document these difficulties for example in an appendix, like
+by making recommendations on how to use efficiently the different
+libraries, not sure it has to be in the main text.
+
+Regarding the experiments, it is indeed  a good practice to reduce the
+difficulty, by changing the dataset, the task or the problem. I do not
+know if it makes sense in your case, but you can focus on particular
+subgroupes of laws.
+
+I'm waiting for the next report.
+
+
+
+
+
+
+
+
+
+
