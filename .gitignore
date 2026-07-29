@@ -1,0 +1,15 @@
+# Environnement
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Donnees BSARD telechargeables via src/data.py::download_bsard() (voir INSTALL.md)
+# -- pas la peine de versionner des CSV re-telechargeables depuis HuggingFace.
+data/*.csv
+!data/abstention_questions.csv
+
+# Sorties volumineuses de kernels Kaggle (index d'embeddings, copies de donnees)
+# -- regenerables en relancant le kernel correspondant, cf. RESULTS.md pour les
+# metriques deja extraites (results/*.json, versionnes).
+kaggle_kernels/*/output/
