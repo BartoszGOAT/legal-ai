@@ -57,7 +57,7 @@ Structure : `src/` (modules Python réutilisables, CPU), `kaggle_kernels/<job>/`
 
 **1. Retrieval** : déjà fait, juste un rerun léger pour exporter les IDs par question.
 
-**2. Fine-tuning (10 runs, tous via `finetune_job.py` + env vars)** : 3 seeds (42/123/2026) config principale · rang LoRA r=8 et r=32 · cibles attn+MLP (teste le risque de surapprentissage vs le run principal via `overfit_gap`) · courbe d'apprentissage n=190/380/786 · données synthétiques (quantité à trancher demain) · **spécialiste Code Civil** (382 questions train / 86 test touchent ce code — opérationnalise directement le conseil d'Habrard "focus on subgroups", teste généraliste vs spécialiste sur le même sous-ensemble + coût en généralisation ailleurs).
+**2. Fine-tuning (10 runs, tous via `finetune_job.py` + env vars)** : 3 seeds (42/123/2026) config principale **r=32** (⚠️ corrigé 29/07 : la référence historique 580 ex. utilisait r=32, pas r=16 — trouvé en relisant `contexte/chaab1.pdf`, le run seed42 déjà fait sur Kaggle avait tourné à r=16 et redevient un point d'ablation) · rang LoRA r=8 et r=16 · cibles attn+MLP (teste le risque de surapprentissage vs le run principal via `overfit_gap`) · courbe d'apprentissage n=190/380/786 · données synthétiques (quantité à trancher demain) · **spécialiste Code Civil** (382 questions train / 86 test touchent ce code — opérationnalise directement le conseil d'Habrard "focus on subgroups", teste généraliste vs spécialiste sur le même sous-ensemble + coût en généralisation ailleurs).
 
 **3. Génération** : run complet (seed42) + 2 runs allégés (seed123/2026, C3/C4 seulement) + run spécialiste Code Civil sur les 222 questions.
 

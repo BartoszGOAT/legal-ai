@@ -1,7 +1,7 @@
 """Job GPU (Kaggle ou RunPod): QLoRA fine-tuning de Mistral-7B-Instruct-v0.3 sur BSARD.
 
-Config alignée sur les CR déjà envoyés (r=16, alpha=32, NF4 4-bit, 3 epochs,
-580 exemples par défaut). Paramétrable par variables d'environnement pour
+Config alignée sur les CR déjà envoyés (r=32, alpha=32, NF4 4-bit, 3 epochs,
+580 exemples par défaut -- r=32 corrige le 29/07, cf. contexte/chaab1.pdf). Paramétrable par variables d'environnement pour
 couvrir toutes les variantes (seeds multiples, ablation rang/cibles LoRA,
 courbe d'apprentissage étendue, augmentation par données synthétiques) sans
 dupliquer ce fichier à chaque combinaison -- un fichier dupliqué à chaque
@@ -11,7 +11,8 @@ appliqué à l'un n'est pas répercuté sur les autres).
 Variables d'environnement reconnues (toutes optionnelles, défauts = run principal):
   FT_SEED               (def. 42)
   FT_TRAIN_SIZE         (def. 580)
-  FT_LORA_R             (def. 16)
+  FT_LORA_R             (def. 32 -- corrige le 29/07: la reference historique 580ex.
+                        utilisait r=32, pas r=16, cf. contexte/chaab1.pdf)
   FT_TARGET_MODULES     "attn" (def.) ou "attn_mlp" (ablation cibles LoRA)
   FT_TRAIN_SOURCE       "official" (def.) ou "official_plus_synthetic"
   FT_N_SYNTHETIC_EXTRA  nb d'exemples supplémentaires puisés dans le split
@@ -77,7 +78,7 @@ np.random.seed(SEED)
 torch.manual_seed(SEED)
 
 MODEL_NAME = "unsloth/mistral-7b-instruct-v0.3-bnb-4bit"
-LORA_R = int(os.environ.get("FT_LORA_R", 16))
+LORA_R = int(os.environ.get("FT_LORA_R", 32))
 LORA_ALPHA = 32
 LORA_DROPOUT = 0.05
 TARGET_MODULES_MODE = os.environ.get("FT_TARGET_MODULES", "attn")

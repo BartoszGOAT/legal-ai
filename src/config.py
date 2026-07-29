@@ -99,8 +99,20 @@ JUDGE_MODEL = "microsoft/Phi-3.5-mini-instruct"
 # ---------------------------------------------------------------------------
 # QLoRA — configuration alignée sur les comptes-rendus déjà envoyés à l'encadrant
 # pour que les valeurs reproduites restent comparables.
+#
+# ECART CORRIGE (trouve en lisant contexte/chaab1.pdf le 29/07): la 2eme
+# iteration historique (580 exemples, ROUGE-L 0.1612 / BERTScore 0.7043 --
+# la reference a reproduire) utilisait r=32, PAS r=16. Le rapport de Chaabane
+# le dit explicitement: "The LoRA rank was also increased from r=16 to r=32
+# (...) roughly 42 million to 84 million [params]". Le run seed42/n=580
+# deja execute sur Kaggle (loss 0.841) a tourne avec r=16 -- ce n'est donc
+# PAS une reproduction fidele de la reference, juste un point de donnee
+# valide en plus (a relabelliser comme tel, pas comme le run "principal").
+# r=32 devient le defaut; r=16 redevient un point d'ablation (comme dans
+# leur iteration 1, mais applique a 580 exemples pour isoler l'effet du
+# rang de celui de la taille du train).
 # ---------------------------------------------------------------------------
-LORA_R = 16
+LORA_R = 32
 LORA_ALPHA = 32
 LORA_DROPOUT = 0.05
 LORA_TARGET_MODULES_ATTN = ["q_proj", "k_proj", "v_proj", "o_proj"]

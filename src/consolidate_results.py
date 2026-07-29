@@ -111,11 +111,14 @@ def render_finetune_section(runs: list[dict]) -> str:
         )
     lines.append("")
 
-    # Variance inter-seeds sur la config principale (n=580, r=16, attn, données
-    # officielles): répond à la critique d'Habrard ("only one experiment").
+    # Variance inter-seeds sur la config principale (n=580, r=32 -- cf.
+    # config.FINETUNE_TRAIN_SIZE / config.LORA_R, corrigé le 29/07 pour
+    # matcher la référence historique réelle, cf. contexte/chaab1.pdf):
+    # répond à la critique d'Habrard ("only one experiment").
     main_runs = [
         m for m in runs
-        if m.get("n_train_examples") and m.get("lora_r") == 16
+        if m.get("n_train_examples") == config.FINETUNE_TRAIN_SIZE
+        and m.get("lora_r") == config.LORA_R
         and m.get("target_modules_mode", "attn") == "attn"
         and m.get("train_source", "official") == "official"
     ]

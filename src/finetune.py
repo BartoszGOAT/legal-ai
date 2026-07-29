@@ -1,8 +1,10 @@
 """QLoRA fine-tuning de Mistral-7B-Instruct-v0.3 sur BSARD.
 
 Conçu pour tourner sur GPU (Kaggle T4 16Go), cf. kaggle_kernels/finetune_job.py.
-Configuration alignée sur les comptes-rendus déjà envoyés (r=16, alpha=32, NF4 4-bit,
-3 epochs) pour que les résultats reproduits restent comparables.
+Configuration alignée sur les comptes-rendus déjà envoyés (r=32, alpha=32, NF4 4-bit,
+3 epochs) pour que les résultats reproduits restent comparables (r=32 corrige le
+29/07, la référence historique 580 exemples utilisait r=32 pas r=16, cf.
+contexte/chaab1.pdf).
 """
 from __future__ import annotations
 
