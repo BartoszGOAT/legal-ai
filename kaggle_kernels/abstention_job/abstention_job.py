@@ -41,7 +41,7 @@ INPUT_DIR = os.environ.get("INPUT_DIR", "/kaggle/input")
 
 SEED = 42
 BASE_MODEL = "unsloth/mistral-7b-instruct-v0.3-bnb-4bit"
-MAX_NEW_TOKENS = 300
+MAX_NEW_TOKENS = 450  # releve du 30/07: 300 tronquait la reponse avant la citation finale
 BATCH_SIZE = 8
 TOP_K = 5
 N_EXCLUDED_ARTICLE_QUESTIONS = 15

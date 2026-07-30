@@ -43,7 +43,7 @@ torch.manual_seed(SEED)
 
 OTHER_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 TOP_K = 5
-MAX_NEW_TOKENS = 300
+MAX_NEW_TOKENS = 450  # releve du 30/07: 300 tronquait la reponse avant la citation finale
 BATCH_SIZE = 8
 
 SYSTEM_PROMPT_FR = (

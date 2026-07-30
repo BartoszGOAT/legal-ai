@@ -39,7 +39,12 @@ torch.manual_seed(SEED)
 
 BASE_MODEL = "unsloth/mistral-7b-instruct-v0.3-bnb-4bit"
 TOP_K = 5
-MAX_NEW_TOKENS = 300
+# 300 coupait fréquemment la réponse avant la citation d'article finale
+# (constaté en testant l'arène humaine sur les données du 30/07 : réponses
+# tronquées en plein mot, ex. "Code de Droit Econom[ique]") -- possible
+# facteur expliquant en partie l'exactitude de citation très basse observée.
+# Relevé à 450 pour laisser la place a la citation.
+MAX_NEW_TOKENS = 450
 BATCH_SIZE = 8
 
 # Ablation de diversité d'échantillonnage (réponse directe à A. Habrard: "make

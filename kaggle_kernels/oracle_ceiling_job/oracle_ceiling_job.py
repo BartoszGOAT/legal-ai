@@ -44,7 +44,7 @@ np.random.seed(SEED)
 torch.manual_seed(SEED)
 
 BASE_MODEL = "unsloth/mistral-7b-instruct-v0.3-bnb-4bit"
-MAX_NEW_TOKENS = 300
+MAX_NEW_TOKENS = 450  # releve du 30/07: 300 tronquait la reponse avant la citation finale
 BATCH_SIZE = 8
 
 SYSTEM_PROMPT_FR = (

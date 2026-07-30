@@ -39,7 +39,7 @@ SEED = 42
 N_SAMPLES = 50
 K_VALUES = [1, 3, 10]
 BASE_MODEL = "unsloth/mistral-7b-instruct-v0.3-bnb-4bit"
-MAX_NEW_TOKENS = 300
+MAX_NEW_TOKENS = 450  # releve du 30/07: 300 tronquait la reponse avant la citation finale
 # batch_size par k: un contexte de k=10 articles peut faire exploser la mémoire
 # attention sur une T4 16 Go avec un batch de 8 (cf. OOM rencontré: "Tried to
 # allocate 4.00 GiB" a k=10 avec batch_size=8 fixe). Reduit avec k croissant.
