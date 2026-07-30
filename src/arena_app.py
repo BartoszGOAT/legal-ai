@@ -164,15 +164,9 @@ def run_app(config_a: str, config_b: str, annotator: str | None = None, share: b
 
     gen = load_generation_results()
     items = build_arena_items(gen, config_a, config_b)
-    # annotator n'est plus fige au lancement: saisi dans l'interface (prenom),
-    # pour que Chaabane et le 3e annotateur puissent utiliser le meme lien
-    # partage sans avoir a relancer le script avec un argument different.
-    state = {"idx": 0, "votes": [], "annotator": None, "out_path": None}
 
     out_dir = config.RESULTS_DIR / "arena_votes"
     out_dir.mkdir(parents=True, exist_ok=True)
-
-    N_OUTPUTS = 9  # question_md, ref_box, left_box, right_box, 4 boutons, annotator_row visibility
 
     def render(idx):
         if idx >= len(items):
@@ -192,28 +186,32 @@ def run_app(config_a: str, config_b: str, annotator: str | None = None, share: b
             gr.update(interactive=True), gr.update(interactive=True),
         )
 
-    def start(prenom):
+    def start(prenom, sess):
         prenom = (prenom or "").strip()
         if not prenom:
             return (
-                gr.update(), gr.update(visible=True),
+                sess, gr.update(), gr.update(visible=True),
                 "⚠️ Merci d'indiquer ton prénom avant de commencer.",
                 "", "", "",
                 gr.update(interactive=False), gr.update(interactive=False),
                 gr.update(interactive=False), gr.update(interactive=False),
             )
-        state["annotator"] = prenom
-        state["out_path"] = out_dir / f"arena_{config_a}_vs_{config_b}_{prenom}.csv"
-        q_text, ref_text, left, right, *btns = render(state["idx"])
-        return (gr.update(visible=False), gr.update(visible=True), q_text, ref_text, left, right, *btns)
+        sess = {"idx": 0, "annotator": prenom}
+        q_text, ref_text, left, right, *btns = render(sess["idx"])
+        return (sess, gr.update(visible=False), gr.update(visible=True), q_text, ref_text, left, right, *btns)
 
-    def vote(choice):
-        idx = state["idx"]
-        if idx >= len(items) or state["annotator"] is None:
-            return render(idx)
+    def vote(choice, sess):
+        # sess est propre a CHAQUE session de navigateur (gr.State), pas un dict
+        # global partage -- sinon plusieurs annotateurs connectes en meme temps
+        # sur le meme lien ecraseraient/melangeraient la progression des autres.
+        if not sess or sess.get("annotator") is None:
+            return sess, *render(0)
+        idx = sess["idx"]
+        if idx >= len(items):
+            return sess, *render(idx)
         item = items[idx]
         row = {
-            "annotator": state["annotator"],
+            "annotator": sess["annotator"],
             "question_index": item["question_index"],
             "category": item["category"],
             "config_a": config_a,
@@ -223,19 +221,19 @@ def run_app(config_a: str, config_b: str, annotator: str | None = None, share: b
             "choice": choice,  # "left", "right", "tie", "neither"
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
-        state["votes"].append(row)
+        out_path = out_dir / f"arena_{config_a}_vs_{config_b}_{sess['annotator']}.csv"
         # Sauvegarde incrémentale (résistant à une fermeture accidentelle du navigateur)
-        out_path = state["out_path"]
         write_header = not out_path.exists()
         with open(out_path, "a", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=list(row.keys()))
             if write_header:
                 writer.writeheader()
             writer.writerow(row)
-        state["idx"] += 1
-        return render(state["idx"])
+        sess["idx"] += 1
+        return sess, *render(sess["idx"])
 
     with gr.Blocks(title="Arène TER — évaluation humaine") as demo:
+        session_state = gr.State(value={"idx": 0, "annotator": None})
         gr.Markdown(f"## Arène : {config_a} vs {config_b}")
         with gr.Row(visible=True) as login_row:
             prenom_box = gr.Textbox(label="Ton prénom", placeholder="ex: Bartosz", value=annotator or "")
@@ -253,13 +251,13 @@ def run_app(config_a: str, config_b: str, annotator: str | None = None, share: b
                 btn_neither = gr.Button("Aucune (les deux mauvaises)")
 
         start_btn.click(
-            start, inputs=[prenom_box],
-            outputs=[login_row, arena_col, question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither],
+            start, inputs=[prenom_box, session_state],
+            outputs=[session_state, login_row, arena_col, question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither],
         )
-        btn_a.click(lambda: vote("left"), outputs=[question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
-        btn_b.click(lambda: vote("right"), outputs=[question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
-        btn_tie.click(lambda: vote("tie"), outputs=[question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
-        btn_neither.click(lambda: vote("neither"), outputs=[question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
+        btn_a.click(lambda s: vote("left", s), inputs=[session_state], outputs=[session_state, question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
+        btn_b.click(lambda s: vote("right", s), inputs=[session_state], outputs=[session_state, question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
+        btn_tie.click(lambda s: vote("tie", s), inputs=[session_state], outputs=[session_state, question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
+        btn_neither.click(lambda s: vote("neither", s), inputs=[session_state], outputs=[session_state, question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
 
     demo.launch(share=share)
 
