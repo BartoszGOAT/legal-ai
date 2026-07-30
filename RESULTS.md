@@ -31,6 +31,7 @@ Généré automatiquement depuis les JSON de `results/`. Chaque chiffre provient
 | Run | Seed | Train src | n_train | n_val | r | Cibles | Loss train | Loss eval | Écart (surapprentissage) | Durée (h) |
 |---|---|---|---|---|---|---|---|---|---|---|
 | ? | 42 | official | 580 | ? | 16 | attn | 0.8411 | n/a | n/a | 9.52 |
+| seed42_n580_r32_attn | 42 | official | 580 | 100 | 32 | attn | 0.8344 | 0.6793 | +0.1423 | 0.26 |
 
 ## Génération — 4 configurations (222 questions test)
 
