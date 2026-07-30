@@ -13,3 +13,8 @@ data/*.csv
 # -- regenerables en relancant le kernel correspondant, cf. RESULTS.md pour les
 # metriques deja extraites (results/*.json, versionnes).
 kaggle_kernels/*/output/
+
+# Poids des adaptateurs LoRA entraines (sauvegarde locale post-incident volume
+# RunPod du 30/07) -- trop volumineux pour un depot de code, pas leur place ici.
+# Les metriques (finetune_meta_*.json) restent versionnees, pas les poids.
+adapters_local/
