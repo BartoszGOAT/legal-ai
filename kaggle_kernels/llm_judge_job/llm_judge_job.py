@@ -106,16 +106,17 @@ model = AutoModelForCausalLM.from_pretrained(JUDGE_MODEL, quantization_config=bn
 def judge_one_sample(question, answer):
     prompt = JUDGE_PROMPT_TEMPLATE.format(question=question, answer=answer)
     messages = [{"role": "user", "content": prompt}]
-    input_ids = tokenizer.apply_chat_template(messages, return_tensors="pt", add_generation_prompt=True).to(model.device)
+    text_prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    inputs = tokenizer(text_prompt, return_tensors="pt").to(model.device)
     with torch.no_grad():
         out = model.generate(
-            input_ids,
+            **inputs,
             max_new_tokens=MAX_NEW_TOKENS,
             do_sample=True,
             temperature=JUDGE_SAMPLING_TEMPERATURE,
             pad_token_id=tokenizer.eos_token_id,
         )
-    text = tokenizer.decode(out[0][input_ids.shape[1] :], skip_special_tokens=True).strip()
+    text = tokenizer.decode(out[0][inputs["input_ids"].shape[1] :], skip_special_tokens=True).strip()
     m = re.search(r"\{.*\}", text, re.DOTALL)
     if m:
         try:
