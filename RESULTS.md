@@ -37,6 +37,7 @@ Généré automatiquement depuis les JSON de `results/`. Chaque chiffre provient
 | seed42_n380_r32_attn | 42 | official | 380 | 100 | 32 | attn | 0.9656 | 0.8604 | +0.1371 | 0.17 |
 | seed42_n580_r32_attn | 42 | official | 580 | 100 | 32 | attn | 0.8344 | 0.6793 | +0.1423 | 0.26 |
 | seed42_n580_r32_attn_mlp | 42 | official | 580 | 100 | 32 | attn_mlp | 0.5269 | 0.4158 | +0.2136 | 0.33 |
+| seed42_n580_r32_attn_synth | 42 | official_plus_synthetic | 2580 | 100 | 32 | attn | 0.9401 | 0.5161 | -0.2350 | 0.86 |
 | seed42_n580_r8_attn | 42 | official | 580 | 100 | 8 | attn | 0.8504 | 0.7101 | +0.1352 | 0.26 |
 | seed42_n786_r32_attn | 42 | official | 786 | 100 | 32 | attn | 0.7359 | 0.5607 | +0.1352 | 0.34 |
 
