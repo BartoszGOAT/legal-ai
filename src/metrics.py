@@ -144,6 +144,31 @@ def is_hallucinated_citation(predicted_text: str, valid_article_refs: set[str]) 
     return any(c not in valid_article_refs for c in cited)
 
 
+# Trouve en testant l'arene humaine le 30/07 : le RAG sans fine-tuning (C2)
+# recopie souvent le motif "Question : ... Reponse : ..." du prompt au lieu de
+# repondre directement (35,6% des reponses, 79/222, contre 0/222 pour les
+# trois autres configs) -- le modele de base, jamais entraine sur le format
+# de sortie attendu, pattern-matche la structure "Contexte:...\nQuestion:..."
+# du prompt RAG et la continue. Le fine-tuning (meme combine au RAG dans C4)
+# elimine completement ce comportement -- signal reel sur ce que le
+# fine-tuning apporte au-dela du contenu juridique lui-meme.
+QUESTION_ECHO_REGEX = re.compile(r"r[ée]ponse\s*:\s*", re.IGNORECASE)
+
+
+def has_question_echo(text: str) -> bool:
+    """Vrai si la reponse recopie un motif Question:/Reponse: du prompt."""
+    return bool(re.search(r"question\s*:", text, re.IGNORECASE)) and bool(QUESTION_ECHO_REGEX.search(text))
+
+
+def strip_question_echo(text: str) -> str:
+    """Ne garde que ce qui suit la DERNIERE occurrence de 'Reponse :' -- pour
+    l'affichage (arene humaine), afin que l'annotateur juge le contenu
+    juridique, pas ce defaut de format. Les metriques automatiques restent
+    calculees sur le texte brut (non nettoye), cf. has_question_echo."""
+    parts = QUESTION_ECHO_REGEX.split(text)
+    return parts[-1].strip() if len(parts) > 1 else text
+
+
 ABSTENTION_PATTERNS = [
     r"\bje ne sais pas\b",
     r"\bje n'ai pas (?:la|de) r[ée]ponse\b",

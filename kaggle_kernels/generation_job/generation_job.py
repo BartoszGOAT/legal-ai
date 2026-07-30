@@ -205,6 +205,16 @@ def batched_generate(
     return outputs
 
 
+# Trouve en testant l'arene humaine le 30/07 (cf. src/metrics.py::has_question_echo
+# pour le detail) : le RAG sans fine-tuning (C2) recopie souvent le motif
+# "Question : ... Reponse : ..." du prompt au lieu de repondre directement.
+QUESTION_ECHO_REGEX = re.compile(r"r[ée]ponse\s*:\s*", re.IGNORECASE)
+
+
+def has_question_echo(text):
+    return bool(re.search(r"question\s*:", text, re.IGNORECASE)) and bool(QUESTION_ECHO_REGEX.search(text))
+
+
 def compute_metrics(answers, reference_answers, gold_refs, valid_article_refs, rouge, bert_score_fn):
     rouge_scores = [rouge.score(ref, ans)["rougeL"].fmeasure for ref, ans in zip(reference_answers, answers)]
     _, _, bert_f1 = bert_score_fn(
@@ -230,6 +240,7 @@ def compute_metrics(answers, reference_answers, gold_refs, valid_article_refs, r
             citation_recalls_per_q.append(float("nan"))
             citation_exact_per_q.append(1.0)  # rien a citer, rien cite -> correct par convention
         hallucinated_flags.append(float(any(c not in valid_article_refs for c in predicted)))
+    echo_flags = [float(has_question_echo(ans)) for ans in answers]
     return {
         "rouge_l_f1_mean": float(np.mean(rouge_scores)),
         "rouge_l_f1_per_question": rouge_scores,
@@ -239,6 +250,8 @@ def compute_metrics(answers, reference_answers, gold_refs, valid_article_refs, r
         "citation_recall_mean": float(np.nanmean(citation_recalls_per_q)) if citation_recalls_per_q else None,
         "citation_exact_match_rate": float(np.mean(citation_exact_per_q)) if citation_exact_per_q else None,
         "hallucination_rate": float(np.mean(hallucinated_flags)),
+        "question_echo_rate": float(np.mean(echo_flags)),
+        "question_echo_per_question": echo_flags,
         "citation_precision_per_question": citation_precisions_per_q,
         "citation_recall_per_question": citation_recalls_per_q,
         "citation_exact_match_per_question": citation_exact_per_q,

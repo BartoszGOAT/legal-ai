@@ -8,7 +8,14 @@ seul) -- le duel central de la question de recherche -- puis C4 vs C2.
 Nécessite generation_results.json (produit par le kernel de génération). Ne
 nécessite AUCUN GPU: tourne en local sur les réponses déjà générées.
 
-Usage: python -m src.arena_app --pair C2_rag:C3_finetune --annotator bartosz
+Affiche aussi le contexte de référence (texte de loi réellement pertinent)
+à côté des deux réponses, pour que l'annotateur puisse juger si une réponse
+s'écarte des faits, pas seulement si elle "sonne bien" (façon Derby LLM
+Fig. 4). Le prénom de l'annotateur se saisit dans l'interface elle-même
+(un seul lien partageable pour Chaabane et le 3e annotateur, pas besoin de
+relancer le script avec un argument différent pour chacun).
+
+Usage: python -m src.arena_app --pair C2_rag:C3_finetune [--annotator bartosz]
 """
 from __future__ import annotations
 
@@ -19,7 +26,7 @@ import random
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import config
+from . import config, metrics
 
 N_ARENA_QUESTIONS = 60
 PRIORITY_PAIRS = [
@@ -85,6 +92,34 @@ def build_stratified_sample(categories: list[str], n_total: int = N_ARENA_QUESTI
     return sorted(sample)
 
 
+MAX_CHARS_PER_ARTICLE = 220
+MAX_ARTICLES_SHOWN = 3
+
+
+def _shorten_reference_context(raw: str) -> str:
+    """Le contexte de référence (concaténation du texte des articles gold,
+    cf. data.py::build_reference_answer) peut faire plusieurs milliers de
+    caractères sur les questions à articles longs ou multiples -- illisible
+    dans l'arène. Raccourci par article (pas une coupure globale aveugle, qui
+    perdrait la référence des articles suivants) : garde la référence de
+    chaque article (ex. "Art. 7, Code Wallon...") en entier, tronque son
+    texte a MAX_CHARS_PER_ARTICLE, et limite a MAX_ARTICLES_SHOWN articles."""
+    lines = [l for l in raw.split("\n") if l.strip()]
+    shortened = []
+    for line in lines[:MAX_ARTICLES_SHOWN]:
+        if ":" in line:
+            ref, _, text = line.partition(":")
+            text = text.strip()
+            if len(text) > MAX_CHARS_PER_ARTICLE:
+                text = text[:MAX_CHARS_PER_ARTICLE].rsplit(" ", 1)[0] + " (...)"
+            shortened.append(f"{ref.strip()} : {text}")
+        else:
+            shortened.append(line[:MAX_CHARS_PER_ARTICLE])
+    if len(lines) > MAX_ARTICLES_SHOWN:
+        shortened.append(f"(+ {len(lines) - MAX_ARTICLES_SHOWN} autre(s) article(s) de référence non affiché(s))")
+    return "\n\n".join(shortened)
+
+
 def build_arena_items(gen: dict, config_a: str, config_b: str, seed: int = config.SEED) -> list[dict]:
     questions = gen["questions"]
     categories = gen.get("categories", [""] * len(questions))
@@ -93,6 +128,8 @@ def build_arena_items(gen: dict, config_a: str, config_b: str, seed: int = confi
 
     answers_a = gen["configs"][config_a]["answers"]
     answers_b = gen["configs"][config_b]["answers"]
+
+    reference_answers = gen.get("reference_answers", [""] * len(questions))
 
     items = []
     for i in sample_idx:
@@ -105,8 +142,16 @@ def build_arena_items(gen: dict, config_a: str, config_b: str, seed: int = confi
                 "question_index": i,
                 "question": questions[i],
                 "category": categories[i],
-                "left_answer": left,
-                "right_answer": right,
+                # Texte des articles réellement pertinents (référence) -- affiché à
+                # l'annotateur pour qu'il puisse juger si une réponse s'écarte des
+                # faits, pas seulement si elle "sonne bien" (façon Derby LLM Fig. 4,
+                # qui affiche le contexte à côté des deux réponses à comparer).
+                "reference_context": _shorten_reference_context(reference_answers[i]),
+                # Nettoye pour l'affichage uniquement (motif "Question:...Reponse:..."
+                # recopie par C2 sans fine-tuning, cf. metrics.has_question_echo) --
+                # le texte brut reste dans generation_results.json pour les metriques.
+                "left_answer": metrics.strip_question_echo(left),
+                "right_answer": metrics.strip_question_echo(right),
                 "left_config": left_cfg,  # non affiché à l'annotateur, utilisé pour désanonymiser après export
                 "right_config": right_cfg,
             }
@@ -114,78 +159,107 @@ def build_arena_items(gen: dict, config_a: str, config_b: str, seed: int = confi
     return items
 
 
-def run_app(config_a: str, config_b: str, annotator: str):
+def run_app(config_a: str, config_b: str, annotator: str | None = None):
     import gradio as gr
 
     gen = load_generation_results()
     items = build_arena_items(gen, config_a, config_b)
-    state = {"idx": 0, "votes": []}
+    # annotator n'est plus fige au lancement: saisi dans l'interface (prenom),
+    # pour que Chaabane et le 3e annotateur puissent utiliser le meme lien
+    # partage sans avoir a relancer le script avec un argument different.
+    state = {"idx": 0, "votes": [], "annotator": None, "out_path": None}
 
     out_dir = config.RESULTS_DIR / "arena_votes"
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / f"arena_{config_a}_vs_{config_b}_{annotator}.csv"
+
+    N_OUTPUTS = 9  # question_md, ref_box, left_box, right_box, 4 boutons, annotator_row visibility
 
     def render(idx):
         if idx >= len(items):
             return (
                 "Terminé — merci ! Toutes les comparaisons ont été votées.",
-                "",
-                "",
-                gr.update(interactive=False),
-                gr.update(interactive=False),
-                gr.update(interactive=False),
-                gr.update(interactive=False),
+                "", "", "",
+                gr.update(interactive=False), gr.update(interactive=False),
+                gr.update(interactive=False), gr.update(interactive=False),
             )
         item = items[idx]
-        progress = f"Question {idx + 1}/{len(items)}"
+        progress = f"Question {idx + 1}/{len(items)} (catégorie : {item['category']})"
         q_text = f"**{progress}**\n\n**Question :** {item['question']}"
-        return q_text, item["left_answer"], item["right_answer"], gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True)
+        ref_text = item["reference_context"] or "(aucun texte de référence disponible pour cette question)"
+        return (
+            q_text, ref_text, item["left_answer"], item["right_answer"],
+            gr.update(interactive=True), gr.update(interactive=True),
+            gr.update(interactive=True), gr.update(interactive=True),
+        )
+
+    def start(prenom):
+        prenom = (prenom or "").strip()
+        if not prenom:
+            return (
+                gr.update(), gr.update(visible=True),
+                "⚠️ Merci d'indiquer ton prénom avant de commencer.",
+                "", "", "",
+                gr.update(interactive=False), gr.update(interactive=False),
+                gr.update(interactive=False), gr.update(interactive=False),
+            )
+        state["annotator"] = prenom
+        state["out_path"] = out_dir / f"arena_{config_a}_vs_{config_b}_{prenom}.csv"
+        q_text, ref_text, left, right, *btns = render(state["idx"])
+        return (gr.update(visible=False), gr.update(visible=True), q_text, ref_text, left, right, *btns)
 
     def vote(choice):
         idx = state["idx"]
-        if idx >= len(items):
+        if idx >= len(items) or state["annotator"] is None:
             return render(idx)
         item = items[idx]
-        state["votes"].append(
-            {
-                "annotator": annotator,
-                "question_index": item["question_index"],
-                "category": item["category"],
-                "config_a": config_a,
-                "config_b": config_b,
-                "left_config": item["left_config"],
-                "right_config": item["right_config"],
-                "choice": choice,  # "left", "right", "tie", "neither"
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            }
-        )
+        row = {
+            "annotator": state["annotator"],
+            "question_index": item["question_index"],
+            "category": item["category"],
+            "config_a": config_a,
+            "config_b": config_b,
+            "left_config": item["left_config"],
+            "right_config": item["right_config"],
+            "choice": choice,  # "left", "right", "tie", "neither"
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        state["votes"].append(row)
         # Sauvegarde incrémentale (résistant à une fermeture accidentelle du navigateur)
+        out_path = state["out_path"]
         write_header = not out_path.exists()
         with open(out_path, "a", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=list(state["votes"][-1].keys()))
+            writer = csv.DictWriter(f, fieldnames=list(row.keys()))
             if write_header:
                 writer.writeheader()
-            writer.writerow(state["votes"][-1])
+            writer.writerow(row)
         state["idx"] += 1
         return render(state["idx"])
 
     with gr.Blocks(title="Arène TER — évaluation humaine") as demo:
-        gr.Markdown(f"## Arène : {config_a} vs {config_b} — annotateur : {annotator}")
-        question_md = gr.Markdown()
-        with gr.Row():
-            left_box = gr.Textbox(label="Réponse A", lines=10, interactive=False)
-            right_box = gr.Textbox(label="Réponse B", lines=10, interactive=False)
-        with gr.Row():
-            btn_a = gr.Button("A est meilleure")
-            btn_b = gr.Button("B est meilleure")
-            btn_tie = gr.Button("Match nul")
-            btn_neither = gr.Button("Aucune (les deux mauvaises)")
+        gr.Markdown(f"## Arène : {config_a} vs {config_b}")
+        with gr.Row(visible=True) as login_row:
+            prenom_box = gr.Textbox(label="Ton prénom", placeholder="ex: Bartosz", value=annotator or "")
+            start_btn = gr.Button("Commencer")
+        with gr.Column(visible=False) as arena_col:
+            question_md = gr.Markdown()
+            ref_box = gr.Textbox(label="Contexte (texte de loi réellement pertinent -- pour juger si une réponse s'écarte des faits)", lines=6, interactive=False)
+            with gr.Row():
+                left_box = gr.Textbox(label="Réponse A", lines=10, interactive=False)
+                right_box = gr.Textbox(label="Réponse B", lines=10, interactive=False)
+            with gr.Row():
+                btn_a = gr.Button("A est meilleure")
+                btn_b = gr.Button("B est meilleure")
+                btn_tie = gr.Button("Match nul")
+                btn_neither = gr.Button("Aucune (les deux mauvaises)")
 
-        demo.load(lambda: render(state["idx"]), outputs=[question_md, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
-        btn_a.click(lambda: vote("left"), outputs=[question_md, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
-        btn_b.click(lambda: vote("right"), outputs=[question_md, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
-        btn_tie.click(lambda: vote("tie"), outputs=[question_md, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
-        btn_neither.click(lambda: vote("neither"), outputs=[question_md, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
+        start_btn.click(
+            start, inputs=[prenom_box],
+            outputs=[login_row, arena_col, question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither],
+        )
+        btn_a.click(lambda: vote("left"), outputs=[question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
+        btn_b.click(lambda: vote("right"), outputs=[question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
+        btn_tie.click(lambda: vote("tie"), outputs=[question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
+        btn_neither.click(lambda: vote("neither"), outputs=[question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
 
     demo.launch()
 
@@ -381,7 +455,7 @@ def compute_full_agreement_distribution(config_a: str, config_b: str, annotators
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--pair", default="C2_rag:C3_finetune", help="config_a:config_b")
-    parser.add_argument("--annotator", required=True)
+    parser.add_argument("--annotator", default=None, help="Pre-remplit le prenom dans l'interface (optionnel, modifiable)")
     args = parser.parse_args()
     ca, cb = args.pair.split(":")
     run_app(ca, cb, args.annotator)
