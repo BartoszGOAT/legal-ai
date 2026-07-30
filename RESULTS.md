@@ -32,9 +32,49 @@ Généré automatiquement depuis les JSON de `results/`. Chaque chiffre provient
 |---|---|---|---|---|---|---|---|---|---|---|
 | ? | 42 | official | 580 | ? | 16 | attn | 0.8411 | n/a | n/a | 9.52 |
 
-## Génération — 4 configurations
+## Génération — 4 configurations (222 questions test)
 
-*(pas encore exécuté / résultats non disponibles)*
+- Exécuté le: 2026-07-30T00:07:29Z
+- top_k RAG: 5
+
+| Config | ROUGE-L | BERTScore F1 | Précision citation | Rappel citation | Exact match | Taux hallucination | Durée (s) |
+|---|---|---|---|---|---|---|---|
+| C1_zero_shot | 0.1064 | 0.7781 | 0.016 | 0.011 | 0.005 | 0.126 | 174.5 |
+| C2_rag | 0.1317 | 0.7937 | 0.180 | 0.120 | 0.050 | 0.207 | 432.8 |
+| C3_finetune | 0.1444 | 0.7973 | 0.007 | 0.004 | 0.000 | 0.027 | 235.9 |
+| C4_finetune_rag | 0.1014 | 0.7643 | 0.030 | 0.041 | 0.005 | 0.090 | 472.5 |
+
+### IC bootstrap 95% (ROUGE-L, 1000 rééchantillonnages)
+
+| Config | Moyenne | IC 95% bas | IC 95% haut |
+|---|---|---|---|
+| C1_zero_shot | 0.1064 | 0.1005 | 0.1125 |
+| C2_rag | 0.1317 | 0.1223 | 0.1427 |
+| C3_finetune | 0.1444 | 0.1345 | 0.1567 |
+| C4_finetune_rag | 0.1014 | 0.0857 | 0.1191 |
+
+### Tests de significativité appariés (Holm-Bonferroni)
+
+| Comparaison | Différence observée | p-value | Significatif (corrigé) |
+|---|---|---|---|
+| C1_zero_shot_vs_C2_rag | -0.0253 | 0.0000 | oui |
+| C1_zero_shot_vs_C3_finetune | -0.0379 | 0.0000 | oui |
+| C1_zero_shot_vs_C4_finetune_rag | +0.0050 | 0.5640 | non |
+| C2_rag_vs_C3_finetune | -0.0127 | 0.0480 | non |
+| C2_rag_vs_C4_finetune_rag | +0.0303 | 0.0020 | oui |
+| C3_finetune_vs_C4_finetune_rag | +0.0430 | 0.0000 | oui |
+
+### Analyse par catégorie juridique (demande A. Habrard)
+
+| Catégorie | n | C1_zero_shot | C2_rag | C3_finetune | C4_finetune_rag |
+|---|---|---|---|---|---|
+| Argent | 36 | 0.112 | 0.156 | 0.143 | 0.079 |
+| Etrangers | 13 | 0.087 | 0.106 | 0.097 | 0.075 |
+| Famille | 67 | 0.114 | 0.144 | 0.181 | 0.112 |
+| Justice | 30 | 0.078 | 0.092 | 0.100 | 0.084 |
+| Logement | 66 | 0.112 | 0.129 | 0.138 | 0.117 |
+| Protection sociale | 4 | 0.084 | 0.109 | 0.123 | 0.097 |
+| Travail | 6 | 0.122 | 0.143 | 0.156 | 0.101 |
 
 ## Fidélité (méthode Derby LLM)
 

@@ -1,0 +1,26 @@
+{
+  "C1_zero_shot": {
+    "spearman_r_question_length": -0.11805626519314145,
+    "p_value_question_length": 0.07922308832674217,
+    "spearman_r_n_gold_articles": -0.49110515798407206,
+    "p_value_n_gold_articles": 7.048609566096931e-15
+  },
+  "C2_rag": {
+    "spearman_r_question_length": -0.08685992129646025,
+    "p_value_question_length": 0.1972883193655513,
+    "spearman_r_n_gold_articles": -0.39400844302115856,
+    "p_value_n_gold_articles": 1.1619344715120322e-09
+  },
+  "C3_finetune": {
+    "spearman_r_question_length": -0.11869745501119876,
+    "p_value_question_length": 0.0775952787055163,
+    "spearman_r_n_gold_articles": -0.48193713736177934,
+    "p_value_n_gold_articles": 2.5962567538215577e-14
+  },
+  "C4_finetune_rag": {
+    "spearman_r_question_length": -0.014304527664830322,
+    "p_value_question_length": 0.8321535986038027,
+    "spearman_r_n_gold_articles": -0.2239607250597078,
+    "p_value_n_gold_articles": 0.0007769011063864943
+  }
+}
