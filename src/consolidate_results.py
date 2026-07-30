@@ -272,12 +272,84 @@ def render_citation_format_section(fmt_summary: dict | None) -> str:
         lines.append(f"| {name} | {count} |")
     lines.append("")
     lines.append(
-        "**Hypothèse à tester une fois `generation_results.json` disponible** : "
-        "citation exact match plus bas / hallucination plus haute sur les questions "
-        "dont au moins un article gold a un identifiant structuré, par rapport aux "
-        "identifiants numériques simples (test de Mann-Whitney par configuration, "
-        "cf. `src/citation_format_analysis.py::format_hypothesis_test`)."
+        "**Hypothèse testée** : citation exact match plus bas sur les questions dont "
+        "au moins un article gold a un identifiant structuré, par rapport aux "
+        "identifiants numériques simples (test de Mann-Whitney par configuration)."
     )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_citation_format_hypothesis_section(result: dict | None) -> str:
+    if result is None:
+        return "### Résultat du test d'hypothèse citation/format\n\n*(pas encore exécuté)*\n"
+    lines = [
+        "### Résultat du test d'hypothèse citation/format",
+        "",
+        "| Config | n simple | n structuré | Moyenne (simple) | Moyenne (structuré) | p-value (Mann-Whitney) | Significatif |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for cfg, r in result.items():
+        sig = "oui" if r["p_value"] < 0.05 else "non"
+        lines.append(
+            f"| {cfg} | {r['n_numeric_simple']} | {r['n_structured']} "
+            f"| {r['mean_numeric_simple']:.4f} | {r['mean_structured']:.4f} "
+            f"| {r['p_value']:.4f} | {sig} |"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_difficulty_section(result: dict | None) -> str:
+    if result is None:
+        return "## Corrélation difficulté / qualité (Spearman)\n\n*(pas encore exécuté)*\n"
+    lines = [
+        "## Corrélation difficulté / qualité (Spearman)",
+        "",
+        "Réponse directe à A. Habrard : le comportement moyen du modèle varie-t-il "
+        "avec la difficulté de la question (longueur, nombre d'articles gold requis) ?",
+        "",
+        "| Config | r (longueur question) | p-value | r (n articles gold) | p-value |",
+        "|---|---|---|---|---|",
+    ]
+    for cfg, r in result.items():
+        sig_len = "*" if r["p_value_question_length"] < 0.05 else ""
+        sig_n = "*" if r["p_value_n_gold_articles"] < 0.05 else ""
+        lines.append(
+            f"| {cfg} | {r['spearman_r_question_length']:+.3f}{sig_len} | {r['p_value_question_length']:.4f} "
+            f"| {r['spearman_r_n_gold_articles']:+.3f}{sig_n} | {r['p_value_n_gold_articles']:.4f} |"
+        )
+    lines.append("")
+    lines.append("*(`*` = significatif à p<0.05)*")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_quality_prediction_section(result: dict | None) -> str:
+    if result is None:
+        return "## Prédiction ML de la fiabilité (§6.10)\n\n*(pas encore exécuté)*\n"
+    clf = result["classifier"]
+    lines = [
+        "## Prédiction ML de la fiabilité (§6.10)",
+        "",
+        f"Cible : `{clf['target_col']}` -- {clf['n_observations']} observations, "
+        f"taux de positifs {clf['positive_rate']:.4f} (déséquilibré, interpréter l'AUC avec prudence).",
+        "",
+        "| Modèle | AUC (classification) |",
+        "|---|---|",
+    ]
+    for name, auc in result["classifier_auc"].items():
+        lines.append(f"| {name} | {auc:.4f} |")
+    lines.append(f"| baseline (classe majoritaire) | {clf['baseline_majority_class_auc']:.4f} |")
+    lines.append("")
+    lines.append("| Modèle | R² (régression ROUGE-L) |")
+    lines.append("|---|---|")
+    for name, r2 in result["regressor_r2"].items():
+        lines.append(f"| {name} | {r2:.4f} |")
+    lines.append("")
+    lines.append("**Importance des variables (Random Forest, classification)** : ")
+    importance = sorted(result["classifier_feature_importance_rf"].items(), key=lambda kv: -kv[1])
+    lines.append(", ".join(f"{k} ({v:.3f})" for k, v in importance))
     lines.append("")
     return "\n".join(lines)
 
@@ -288,6 +360,9 @@ def build_results_md():
     finetune_runs = load_all_finetune_runs()
     generation = load_json(RESULTS_DIR / "generation_results.json")
     citation_format_summary = load_json(RESULTS_DIR / "citation_format_summary.json")
+    citation_format_hypothesis = load_json(RESULTS_DIR / "citation_format_hypothesis_test.json")
+    difficulty_correlation = load_json(RESULTS_DIR / "difficulty_correlation.json")
+    quality_prediction = load_json(RESULTS_DIR / "quality_prediction_results.json")
     fidelity = load_json(RESULTS_DIR / "fidelity_results.json")
     llm_judge = load_json(RESULTS_DIR / "llm_judge_results.json")
 
@@ -311,6 +386,12 @@ def build_results_md():
         + render_llm_judge_section(llm_judge)
         + "\n"
         + render_citation_format_section(citation_format_summary)
+        + "\n"
+        + render_citation_format_hypothesis_section(citation_format_hypothesis)
+        + "\n"
+        + render_difficulty_section(difficulty_correlation)
+        + "\n"
+        + render_quality_prediction_section(quality_prediction)
     )
 
     out_path = config.ROOT_DIR / "RESULTS.md"

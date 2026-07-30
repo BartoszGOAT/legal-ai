@@ -90,9 +90,16 @@ Deux tests indépendants par paire (le bootstrap ne suppose rien sur la distribu
 | Protection sociale | 4 | 0.087 | 0.126 | 0.112 | 0.137 |
 | Travail | 6 | 0.121 | 0.153 | 0.154 | 0.138 |
 
-## Fidélité (méthode Derby LLM)
+## Fidélité (méthode Derby LLM, Bouvard et al. APIA@PFIA 2024)
 
-*(pas encore exécuté / résultats non disponibles)*
+Recouvrement des passages d'intérêt (entités nommées, nombres, emails, URLs) entre réponse générée et texte de référence -- métrique déterministe, réimplémentée pour se positionner directement face à la référence imposée.
+
+| Config | Fidélité moyenne | n avec passages d'intérêt |
+|---|---|---|
+| C1_zero_shot | 0.054 | 221/222 |
+| C2_rag | 0.295 | 219/222 |
+| C3_finetune | 0.298 | 222/222 |
+| C4_finetune_rag | 0.324 | 210/222 |
 
 ## LLM-as-judge (pertinence)
 
@@ -112,4 +119,44 @@ Découvert en creusant le bug d'extraction regex (cf. DIFFICULTES.md §9). Véri
 | numeric_simple | 118 |
 | structured | 104 |
 
-**Hypothèse à tester une fois `generation_results.json` disponible** : citation exact match plus bas / hallucination plus haute sur les questions dont au moins un article gold a un identifiant structuré, par rapport aux identifiants numériques simples (test de Mann-Whitney par configuration, cf. `src/citation_format_analysis.py::format_hypothesis_test`).
+**Hypothèse testée** : citation exact match plus bas sur les questions dont au moins un article gold a un identifiant structuré, par rapport aux identifiants numériques simples (test de Mann-Whitney par configuration).
+
+### Résultat du test d'hypothèse citation/format
+
+| Config | n simple | n structuré | Moyenne (simple) | Moyenne (structuré) | p-value (Mann-Whitney) | Significatif |
+|---|---|---|---|---|---|---|
+| C1_zero_shot | 118 | 104 | 0.0085 | 0.0000 | 0.3525 | non |
+| C2_rag | 118 | 104 | 0.0508 | 0.0192 | 0.2094 | non |
+| C3_finetune | 118 | 104 | 0.0000 | 0.0000 | 1.0000 | non |
+| C4_finetune_rag | 118 | 104 | 0.0085 | 0.0000 | 0.3525 | non |
+
+## Corrélation difficulté / qualité (Spearman)
+
+Réponse directe à A. Habrard : le comportement moyen du modèle varie-t-il avec la difficulté de la question (longueur, nombre d'articles gold requis) ?
+
+| Config | r (longueur question) | p-value | r (n articles gold) | p-value |
+|---|---|---|---|---|
+| C1_zero_shot | -0.107 | 0.1125 | -0.452* | 0.0000 |
+| C2_rag | -0.076 | 0.2584 | -0.336* | 0.0000 |
+| C3_finetune | -0.064 | 0.3403 | -0.510* | 0.0000 |
+| C4_finetune_rag | -0.152* | 0.0236 | -0.353* | 0.0000 |
+
+*(`*` = significatif à p<0.05)*
+
+## Prédiction ML de la fiabilité (§6.10)
+
+Cible : `citation_exact_match` -- 888 observations, taux de positifs 0.0113 (déséquilibré, interpréter l'AUC avec prudence).
+
+| Modèle | AUC (classification) |
+|---|---|
+| logistic_regression | 0.8782 |
+| random_forest | 0.8384 |
+| baseline (classe majoritaire) | 0.5000 |
+
+| Modèle | R² (régression ROUGE-L) |
+|---|---|
+| linear_regression | 0.1364 |
+| random_forest | 0.1662 |
+
+**Importance des variables (Random Forest, classification)** : 
+question_length_words (0.389), category_train_frequency (0.185), n_gold_articles (0.158), config_C2_rag (0.127), has_structured_gold (0.066), config_C3_finetune (0.027), config_C1_zero_shot (0.025), config_C4_finetune_rag (0.022)
