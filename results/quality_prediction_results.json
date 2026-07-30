@@ -3,24 +3,24 @@
     "baseline_majority_class_auc": 0.5,
     "target_col": "citation_exact_match",
     "n_observations": 888,
-    "positive_rate": 0.01463963963963964
+    "positive_rate": 0.01126126126126126
   },
   "classifier_auc": {
-    "logistic_regression": 0.8782857142857142,
-    "random_forest": 0.8273846153846154
+    "logistic_regression": 0.8782460136674259,
+    "random_forest": 0.8384396355353075
   },
   "classifier_feature_importance_rf": {
-    "question_length_words": 0.3594077243897197,
-    "n_gold_articles": 0.16700054944834233,
-    "category_train_frequency": 0.18421579737164448,
-    "has_structured_gold": 0.05759339472618372,
-    "config_C1_zero_shot": 0.026540521517986287,
-    "config_C2_rag": 0.15157655457059263,
-    "config_C3_finetune": 0.026779920107137235,
-    "config_C4_finetune_rag": 0.02688553786839361
+    "question_length_words": 0.38913646329211027,
+    "n_gold_articles": 0.15846793121599703,
+    "category_train_frequency": 0.1848302933560568,
+    "has_structured_gold": 0.06590099242132388,
+    "config_C1_zero_shot": 0.02549127928583494,
+    "config_C2_rag": 0.1265544680427249,
+    "config_C3_finetune": 0.02749433240499532,
+    "config_C4_finetune_rag": 0.022124239980956868
   },
   "regressor_r2": {
-    "linear_regression": 0.13349298284460753,
-    "random_forest": 0.1315014413528397
+    "linear_regression": 0.13644857235495134,
+    "random_forest": 0.1661854851520751
   }
 }

@@ -10,10 +10,10 @@
   "C2_rag": {
     "n_numeric_simple": 118,
     "n_structured": 104,
-    "mean_numeric_simple": 0.06779661016949153,
-    "mean_structured": 0.028846153846153848,
-    "mannwhitney_u": 6375.0,
-    "p_value": 0.18395470248930812
+    "mean_numeric_simple": 0.05084745762711865,
+    "mean_structured": 0.019230769230769232,
+    "mannwhitney_u": 6330.0,
+    "p_value": 0.20942230058551625
   },
   "C3_finetune": {
     "n_numeric_simple": 118,

@@ -46,47 +46,47 @@ Généré automatiquement depuis les JSON de `results/`. Chaque chiffre provient
 
 ## Génération — 4 configurations (222 questions test)
 
-- Exécuté le: 2026-07-30T00:07:29Z
+- Exécuté le: 2026-07-30T17:02:32Z
 - top_k RAG: 5
 
 | Config | ROUGE-L | BERTScore F1 | Précision citation | Rappel citation | Exact match | Taux hallucination | Durée (s) |
 |---|---|---|---|---|---|---|---|
-| C1_zero_shot | 0.1064 | 0.7781 | 0.016 | 0.011 | 0.005 | 0.126 | 174.5 |
-| C2_rag | 0.1317 | 0.7937 | 0.180 | 0.120 | 0.050 | 0.207 | 432.8 |
-| C3_finetune | 0.1444 | 0.7973 | 0.007 | 0.004 | 0.000 | 0.027 | 235.9 |
-| C4_finetune_rag | 0.1014 | 0.7643 | 0.030 | 0.041 | 0.005 | 0.090 | 472.5 |
+| C1_zero_shot | 0.1100 | 0.7788 | 0.016 | 0.011 | 0.005 | 0.144 | 258.3 |
+| C2_rag | 0.1395 | 0.7947 | 0.176 | 0.132 | 0.036 | 0.234 | 622.2 |
+| C3_finetune | 0.1467 | 0.8009 | 0.023 | 0.012 | 0.000 | 0.050 | 343.4 |
+| C4_finetune_rag | 0.1790 | 0.7978 | 0.069 | 0.053 | 0.005 | 0.167 | 705.5 |
 
 ### IC bootstrap 95% (ROUGE-L, 1000 rééchantillonnages)
 
 | Config | Moyenne | IC 95% bas | IC 95% haut |
 |---|---|---|---|
-| C1_zero_shot | 0.1064 | 0.1005 | 0.1125 |
-| C2_rag | 0.1317 | 0.1223 | 0.1427 |
-| C3_finetune | 0.1444 | 0.1345 | 0.1567 |
-| C4_finetune_rag | 0.1014 | 0.0857 | 0.1191 |
+| C1_zero_shot | 0.1100 | 0.1037 | 0.1163 |
+| C2_rag | 0.1395 | 0.1292 | 0.1511 |
+| C3_finetune | 0.1467 | 0.1360 | 0.1598 |
+| C4_finetune_rag | 0.1790 | 0.1565 | 0.2017 |
 
 ### Tests de significativité appariés (Holm-Bonferroni)
 
 | Comparaison | Différence observée | p-value | Significatif (corrigé) |
 |---|---|---|---|
-| C1_zero_shot_vs_C2_rag | -0.0253 | 0.0000 | oui |
-| C1_zero_shot_vs_C3_finetune | -0.0379 | 0.0000 | oui |
-| C1_zero_shot_vs_C4_finetune_rag | +0.0050 | 0.5640 | non |
-| C2_rag_vs_C3_finetune | -0.0127 | 0.0480 | non |
-| C2_rag_vs_C4_finetune_rag | +0.0303 | 0.0020 | oui |
-| C3_finetune_vs_C4_finetune_rag | +0.0430 | 0.0000 | oui |
+| C1_zero_shot_vs_C2_rag | -0.0295 | 0.0000 | oui |
+| C1_zero_shot_vs_C3_finetune | -0.0368 | 0.0000 | oui |
+| C1_zero_shot_vs_C4_finetune_rag | -0.0691 | 0.0000 | oui |
+| C2_rag_vs_C3_finetune | -0.0072 | 0.2960 | non |
+| C2_rag_vs_C4_finetune_rag | -0.0395 | 0.0000 | oui |
+| C3_finetune_vs_C4_finetune_rag | -0.0323 | 0.0040 | oui |
 
 ### Analyse par catégorie juridique (demande A. Habrard)
 
 | Catégorie | n | C1_zero_shot | C2_rag | C3_finetune | C4_finetune_rag |
 |---|---|---|---|---|---|
-| Argent | 36 | 0.112 | 0.156 | 0.143 | 0.079 |
-| Etrangers | 13 | 0.087 | 0.106 | 0.097 | 0.075 |
-| Famille | 67 | 0.114 | 0.144 | 0.181 | 0.112 |
-| Justice | 30 | 0.078 | 0.092 | 0.100 | 0.084 |
-| Logement | 66 | 0.112 | 0.129 | 0.138 | 0.117 |
-| Protection sociale | 4 | 0.084 | 0.109 | 0.123 | 0.097 |
-| Travail | 6 | 0.122 | 0.143 | 0.156 | 0.101 |
+| Argent | 36 | 0.112 | 0.167 | 0.128 | 0.191 |
+| Etrangers | 13 | 0.096 | 0.118 | 0.126 | 0.117 |
+| Famille | 67 | 0.117 | 0.146 | 0.179 | 0.182 |
+| Justice | 30 | 0.082 | 0.099 | 0.105 | 0.116 |
+| Logement | 66 | 0.118 | 0.140 | 0.149 | 0.216 |
+| Protection sociale | 4 | 0.087 | 0.126 | 0.112 | 0.137 |
+| Travail | 6 | 0.121 | 0.153 | 0.154 | 0.138 |
 
 ## Fidélité (méthode Derby LLM)
 
