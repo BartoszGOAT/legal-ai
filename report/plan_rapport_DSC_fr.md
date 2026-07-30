@@ -33,17 +33,43 @@ et les références `.bib` à citer (`report/references.bib`). Contenu rédigé 
   d'arène et de fidélité, mais domaine juridique (vs. domaine étudié dans Derby LLM) et
   protocole étendu (222 questions test complètes, IC bootstrap, sous-groupes de lois,
   ablations retrieval/LoRA — cf. §6)
-- Autres comparaisons RAG/fine-tuning (Ovadia et al., Balaguer et al. — *à vérifier avant
-  citation finale*, cf. TODO dans references.bib)
+- **Ovadia et al. (@ovadia2023finetuneorretrieve, EMNLP 2024)** : le RAG surpasse
+  systématiquement le fine-tuning **non-supervisé** (poursuite du pré-entraînement sur du
+  texte brut) pour l'injection de connaissances -- **exactement la même limite que celle
+  identifiée par Derby LLM** sur leur propre fine-tuning. Nous utilisons du fine-tuning
+  **supervisé** (paires question→réponse formatées avec citation), une tâche bien plus
+  proche de ce pour quoi QLoRA est conçu -- si nos résultats divergent de ces deux
+  références, cette distinction méthodologique (supervisé vs non-supervisé) en est
+  l'explication la plus probable, pas une contradiction.
+- **Balaguer et al. (@balaguer2024ragvsft)** : sur un cas d'usage agricole, le fine-tuning
+  seul gagne +6 points de précision, et **combiner fine-tuning et RAG en ajoute encore +5**
+  -- cohérent avec notre propre résultat où C4 (fine-tuning+RAG) dépasse les deux approches
+  prises séparément, un point de convergence à souligner explicitement.
 ### 3.4 Évaluation des systèmes de QA / IA générative
-- Métriques de surface : ROUGE, BERTScore (@zhang2020bertscore)
-- LLM-as-judge : RAGAS (@es2023ragas), Chatbot Arena (@chiang2024chatbotarena)
-- Hallucination : surveys (*à compléter, vérifiés avant citation*)
+- Métriques de surface : ROUGE (@lin2004rouge), BERTScore (@zhang2020bertscore)
+- LLM-as-judge : RAGAS (@es2023ragas), Chatbot Arena (@chiang2024chatbotarena, méthode
+  Bradley-Terry que nous réutilisons pour classer les 4 configurations à partir des votes
+  d'arène)
+- **Nuance méthodologique sur la fidélité** : RAGAS calcule la fidélité par extraction de
+  claims via LLM puis vérification NLI claim-par-claim (coûteux, potentiellement fragile
+  si l'extraction échoue) ; ARES utilise des juges spécialisés fine-tunés (DeBERTa). Notre
+  métrique de fidélité (façon Derby LLM, recouvrement d'entités spaCy) est délibérément
+  plus simple et déterministe -- à assumer explicitement comme une limite/simplification,
+  pas présenter comme équivalent à RAGAS.
+- Efficacité des LLM et PEFT (@wan2023efficientllmsurvey)
+- Hallucination : survey général (@rawte2023hallucinationsurvey). **Point de comparaison
+  concret trouvé** : une étude Stanford (citée dans la littérature sur l'hallucination
+  juridique) mesure des taux d'hallucination de 43% (GPT-4), 33% (Westlaw AI) et 17%
+  (Lexis+) sur des outils juridiques commerciaux -- **notre C3 (fine-tuning seul, 5,0%)
+  est nettement en dessous de ces trois outils commerciaux**, un résultat frappant et
+  citable pour la discussion, à condition de trouver et vérifier la référence exacte de
+  cette étude avant de l'inclure dans le rapport final (pas encore fait).
 ### 3.5 Datasets et benchmarks juridiques
 - BSARD (@louis2022bsard), LegalBench (@guha2023legalbench), CUAD (@hendrycks2021cuad),
   LexGLUE (@chalkidis2022lexglue)
-- LLeQA : dataset initialement visé, accès jamais accordé (cf. DIFFICULTES.md) — justifie
-  la bascule vers BSARD
+- LLeQA (@louis2023lleqa) : dataset initialement visé (construit sur BSARD, +69% de
+  questions, annotations enrichies), accès jamais accordé (cf. DIFFICULTES.md) — justifie
+  la bascule vers BSARD, dont il prolonge directement le travail
 ### 3.6 Modèles de base
 - Mistral 7B (@jiang2023mistral7b), Llama 2 (@touvron2023llama2), quantification
 
