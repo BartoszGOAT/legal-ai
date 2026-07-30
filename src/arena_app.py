@@ -159,7 +159,7 @@ def build_arena_items(gen: dict, config_a: str, config_b: str, seed: int = confi
     return items
 
 
-def run_app(config_a: str, config_b: str, annotator: str | None = None):
+def run_app(config_a: str, config_b: str, annotator: str | None = None, share: bool = False):
     import gradio as gr
 
     gen = load_generation_results()
@@ -261,7 +261,7 @@ def run_app(config_a: str, config_b: str, annotator: str | None = None):
         btn_tie.click(lambda: vote("tie"), outputs=[question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
         btn_neither.click(lambda: vote("neither"), outputs=[question_md, ref_box, left_box, right_box, btn_a, btn_b, btn_tie, btn_neither])
 
-    demo.launch()
+    demo.launch(share=share)
 
 
 def compute_inter_annotator_agreement(config_a: str, config_b: str, annotators: list[str]) -> dict:
@@ -456,6 +456,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--pair", default="C2_rag:C3_finetune", help="config_a:config_b")
     parser.add_argument("--annotator", default=None, help="Pre-remplit le prenom dans l'interface (optionnel, modifiable)")
+    parser.add_argument("--share", action="store_true", help="Cree un lien public temporaire Gradio (annotateurs a distance)")
     args = parser.parse_args()
     ca, cb = args.pair.split(":")
-    run_app(ca, cb, args.annotator)
+    run_app(ca, cb, args.annotator, share=args.share)
