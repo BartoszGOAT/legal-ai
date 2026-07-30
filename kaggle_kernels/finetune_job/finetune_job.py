@@ -18,6 +18,8 @@ Variables d'environnement reconnues (toutes optionnelles, défauts = run princip
   FT_N_SYNTHETIC_EXTRA  nb d'exemples supplémentaires puisés dans le split
                         synthétique BSARD si FT_TRAIN_SOURCE=official_plus_synthetic (def. 0)
   FT_RUN_TAG            suffixe des fichiers de sortie (def. dérivé des params ci-dessus)
+  FT_CODE_FILTER        nom exact du code de loi (ex. "Code Civil") pour restreindre le
+                        pool d'entraînement -- specialiste vs generaliste (def. aucun filtre)
 
 Validation: 100 questions réservées (seed fixe 999, indépendante de FT_SEED)
 pour être IDENTIQUES et disjointes de TOUTES les tailles de train testées
@@ -92,6 +94,11 @@ VAL_SIZE = int(os.environ.get("FT_VAL_SIZE", 100))
 VAL_SPLIT_SEED = 999  # fixe, independant de FT_SEED: meme jeu de validation pour tous les runs
 TRAIN_SOURCE = os.environ.get("FT_TRAIN_SOURCE", "official")  # "official" ou "official_plus_synthetic"
 N_SYNTHETIC_EXTRA = int(os.environ.get("FT_N_SYNTHETIC_EXTRA", 0))
+# Specialiste sur un seul code de loi (ex. "Code Civil") -- operationnalise le
+# conseil d'A. Habrard ("focus on particular subgroups of laws") comme une
+# vraie experience de reduction de la difficulte, pas juste une stratification
+# descriptive: 382 questions train / 86 questions test touchent le Code Civil.
+CODE_FILTER = os.environ.get("FT_CODE_FILTER", "")
 BATCH_SIZE = 4
 GRAD_ACCUM = 4
 LR = 2e-4
@@ -99,7 +106,8 @@ LR = 2e-4
 RUN_TAG = os.environ.get(
     "FT_RUN_TAG",
     f"seed{SEED}_n{TRAIN_SIZE}_r{LORA_R}_{TARGET_MODULES_MODE}"
-    + ("_synth" if TRAIN_SOURCE == "official_plus_synthetic" else ""),
+    + ("_synth" if TRAIN_SOURCE == "official_plus_synthetic" else "")
+    + (f"_{CODE_FILTER.replace(' ', '')}" if CODE_FILTER else ""),
 )
 
 SYSTEM_PROMPT_FR = (
@@ -138,6 +146,13 @@ questions_train["article_ids"] = questions_train["article_ids"].apply(
 val_df = questions_train.sample(n=min(VAL_SIZE, len(questions_train)), random_state=VAL_SPLIT_SEED)
 train_pool = questions_train.drop(val_df.index)
 val_df = val_df.reset_index(drop=True)
+
+if CODE_FILTER:
+    codes_by_article = articles.set_index("id")["code"].to_dict()
+    train_pool = train_pool[
+        train_pool["article_ids"].apply(lambda ids: any(codes_by_article.get(i) == CODE_FILTER for i in ids))
+    ]
+    print(f"n_train_pool_apres_filtre_code({CODE_FILTER}) = {len(train_pool)}")
 
 df = train_pool.sample(n=min(TRAIN_SIZE, len(train_pool)), random_state=SEED).reset_index(drop=True)
 
@@ -282,6 +297,7 @@ meta = {
     "target_modules": TARGET_MODULES,
     "train_source": TRAIN_SOURCE,
     "n_synthetic_extra": N_SYNTHETIC_EXTRA,
+    "code_filter": CODE_FILTER or None,
     "n_train_examples": len(examples),
     "n_val_examples": len(val_examples),
     "trainable_params": int(trainable),
