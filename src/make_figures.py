@@ -269,6 +269,62 @@ def fig_inter_annotator_agreement(config_a: str, config_b: str, annotators: list
     print(f"Figure écrite: {out}")
 
 
+def fig_agreement_distribution(config_a: str, config_b: str, annotators: list[str]):
+    """Camembert de la distribution d'accord entre annotateurs (unanime /
+    majoritaire / aucun accord) -- façon Derby LLM Figure 7. Jamais tracé
+    jusqu'ici alors que compute_full_agreement_distribution existe déjà."""
+    from . import arena_app
+
+    dist = arena_app.compute_full_agreement_distribution(config_a, config_b, annotators)
+    if "error" in dist:
+        print(f"{dist['error']}, figure ignorée")
+        return
+
+    labels = ["Accord unanime", "Accord majoritaire", "Aucun accord"]
+    values = [dist["pct_unanimous"], dist["pct_majority_only"], dist["pct_no_agreement"]]
+    colors = ["#55A868", "#DD8452", "#C44E52"]
+
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.pie(values, labels=[f"{l}\n({v:.1f}%)" for l, v in zip(labels, values)], colors=colors, startangle=90)
+    ax.set_title(f"Accord inter-annotateurs ({dist['n_questions']} questions, {len(annotators)} annotateurs)")
+    FIGURES_DIR.mkdir(parents=True, exist_ok=True)
+    out = FIGURES_DIR / "agreement_distribution.pdf"
+    fig.tight_layout()
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"Figure écrite: {out}")
+
+
+def fig_error_type_distribution():
+    """Camembert de la répartition globale des types d'erreur (toutes configs
+    confondues) -- vue synthétique complémentaire à la matrice type×config."""
+    path = RESULTS_DIR / "error_annotation_template.csv"
+    if not path.exists():
+        print("error_annotation_template.csv absent, figure ignorée")
+        return
+    import pandas as pd
+
+    from . import error_analysis
+
+    df = pd.read_csv(path)
+    if (df["error_code_annotator1"] == "").all():
+        print("error_annotation_template.csv pas encore annoté, figure ignorée")
+        return
+    df = df[df["error_code_annotator1"] != ""].copy()
+    df["error_type"] = df["error_code_annotator1"].astype(int).map(error_analysis.ERROR_TAXONOMY)
+    counts = df["error_type"].value_counts()
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.pie(counts.values, labels=[f"{l}\n({v})" for l, v in zip(counts.index, counts.values)], startangle=90)
+    ax.set_title("Répartition globale des types d'erreur (toutes configs)")
+    FIGURES_DIR.mkdir(parents=True, exist_ok=True)
+    out = FIGURES_DIR / "error_type_distribution.pdf"
+    fig.tight_layout()
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"Figure écrite: {out}")
+
+
 if __name__ == "__main__":
     fig_recall_at_k()
     fig_category_distribution()
@@ -277,3 +333,4 @@ if __name__ == "__main__":
     fig_learning_curve()
     fig_error_matrix()
     fig_bradley_terry_ranking()
+    fig_error_type_distribution()

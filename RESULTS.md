@@ -67,14 +67,16 @@ Généré automatiquement depuis les JSON de `results/`. Chaque chiffre provient
 
 ### Tests de significativité appariés (Holm-Bonferroni)
 
-| Comparaison | Différence observée | p-value | Significatif (corrigé) |
-|---|---|---|---|
-| C1_zero_shot_vs_C2_rag | -0.0295 | 0.0000 | oui |
-| C1_zero_shot_vs_C3_finetune | -0.0368 | 0.0000 | oui |
-| C1_zero_shot_vs_C4_finetune_rag | -0.0691 | 0.0000 | oui |
-| C2_rag_vs_C3_finetune | -0.0072 | 0.2960 | non |
-| C2_rag_vs_C4_finetune_rag | -0.0395 | 0.0000 | oui |
-| C3_finetune_vs_C4_finetune_rag | -0.0323 | 0.0040 | oui |
+Deux tests indépendants par paire (le bootstrap ne suppose rien sur la distribution des différences, Wilcoxon suppose une distribution symétrique) -- s'ils s'accordent, la conclusion est plus solide qu'avec un seul test.
+
+| Comparaison | Différence observée | p-value (bootstrap) | p-value (Wilcoxon) | Significatif (corrigé) | Tests d'accord |
+|---|---|---|---|---|---|
+| C1_zero_shot_vs_C2_rag | -0.0295 | 0.0000 | 0.0000 | oui | oui |
+| C1_zero_shot_vs_C3_finetune | -0.0368 | 0.0000 | 0.0000 | oui | oui |
+| C1_zero_shot_vs_C4_finetune_rag | -0.0691 | 0.0000 | 0.0000 | oui | oui |
+| C2_rag_vs_C3_finetune | -0.0072 | 0.2960 | 0.0796 | non | oui |
+| C2_rag_vs_C4_finetune_rag | -0.0395 | 0.0000 | 0.0002 | oui | oui |
+| C3_finetune_vs_C4_finetune_rag | -0.0323 | 0.0040 | 0.3066 | oui | non |
 
 ### Analyse par catégorie juridique (demande A. Habrard)
 

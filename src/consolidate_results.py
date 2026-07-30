@@ -167,11 +167,21 @@ def render_generation_section(gen: dict | None) -> str:
 
     lines.append("### Tests de significativité appariés (Holm-Bonferroni)")
     lines.append("")
-    lines.append("| Comparaison | Différence observée | p-value | Significatif (corrigé) |")
-    lines.append("|---|---|---|---|")
+    lines.append(
+        "Deux tests indépendants par paire (le bootstrap ne suppose rien sur la "
+        "distribution des différences, Wilcoxon suppose une distribution symétrique) "
+        "-- s'ils s'accordent, la conclusion est plus solide qu'avec un seul test."
+    )
+    lines.append("")
+    lines.append("| Comparaison | Différence observée | p-value (bootstrap) | p-value (Wilcoxon) | Significatif (corrigé) | Tests d'accord |")
+    lines.append("|---|---|---|---|---|---|")
     for name, test in comparison["pairwise_tests"].items():
         sig = "oui" if test["significant_after_correction"] else "non"
-        lines.append(f"| {name} | {test['observed_diff']:+.4f} | {test['p_value']:.4f} | {sig} |")
+        agree = "oui" if test.get("tests_agree") else "non"
+        lines.append(
+            f"| {name} | {test['observed_diff']:+.4f} | {test['p_value']:.4f} "
+            f"| {test.get('wilcoxon_p_value', float('nan')):.4f} | {sig} | {agree} |"
+        )
     lines.append("")
 
     # Analyse par catégorie

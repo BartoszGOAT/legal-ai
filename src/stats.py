@@ -126,6 +126,17 @@ def compare_all_configs(
         test = paired_bootstrap_test(
             per_question_scores[a], per_question_scores[b], n_resamples=n_resamples, seed=seed
         )
+        # Wilcoxon signe en complement du bootstrap: deux tests independants,
+        # d'hypotheses differentes (le bootstrap ne suppose rien sur la
+        # distribution, Wilcoxon suppose une distribution symetrique des
+        # differences) -- si les deux s'accordent, la conclusion est plus
+        # solide. Code depuis le debut (wilcoxon_signed_rank) mais jamais
+        # cable ici jusqu'a present -- trouve en verifiant l'inventaire des
+        # tests reellement utilises.
+        wilcoxon = wilcoxon_signed_rank(per_question_scores[a], per_question_scores[b])
+        test["wilcoxon_p_value"] = wilcoxon["p_value"]
+        test["wilcoxon_statistic"] = wilcoxon["statistic"]
+        test["tests_agree"] = (test["p_value"] < 0.05) == (wilcoxon["p_value"] < 0.05)
         key = f"{a}_vs_{b}"
         pairwise[key] = test
         p_values[key] = test["p_value"]
