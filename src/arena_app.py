@@ -38,11 +38,58 @@ def load_generation_results() -> dict:
         return json.load(f)
 
 
+def _water_fill_allocation(sizes: dict[str, int], total: int) -> dict[str, int]:
+    """Répartition équilibrée par catégorie (pas proportionnelle) : chaque
+    catégorie reçoit une part égale du budget restant, plafonnée par sa
+    taille réelle -- les catégories les plus petites (ex. Protection sociale,
+    4 questions sur 222) donnent tout ce qu'elles ont plutôt que de recevoir
+    une part proportionnelle qui les rendrait inanalysables (1 question sur 60).
+    """
+    remaining_cats = sorted(sizes.keys(), key=lambda c: sizes[c])
+    allocation = {}
+    budget = total
+    n_remaining = len(remaining_cats)
+    for c in remaining_cats:
+        share = budget / n_remaining
+        take = min(sizes[c], round(share))
+        allocation[c] = take
+        budget -= take
+        n_remaining -= 1
+    leftover = total - sum(allocation.values())
+    if leftover != 0:
+        largest = max(allocation, key=lambda c: sizes[c])
+        allocation[largest] += leftover
+    return allocation
+
+
+def build_stratified_sample(categories: list[str], n_total: int = N_ARENA_QUESTIONS, seed: int = config.SEED) -> list[int]:
+    """Tirage stratifié par catégorie juridique : répartition équilibrée
+    (cf. _water_fill_allocation), pas un simple tirage aléatoire uniforme qui
+    reproduirait le déséquilibre du corpus (Famille/Logement sur-représentées,
+    Protection sociale quasi absente). Permet ensuite d'analyser par catégorie
+    quelles configurations sont préférées humainement, pas seulement le total.
+    """
+    rng = random.Random(seed)
+    by_cat: dict[str, list[int]] = {}
+    for i, c in enumerate(categories):
+        by_cat.setdefault(c, []).append(i)
+    for c in by_cat:
+        rng.shuffle(by_cat[c])
+
+    sizes = {c: len(idx) for c, idx in by_cat.items()}
+    allocation = _water_fill_allocation(sizes, min(n_total, len(categories)))
+
+    sample = []
+    for c, n in allocation.items():
+        sample.extend(by_cat[c][:n])
+    return sorted(sample)
+
+
 def build_arena_items(gen: dict, config_a: str, config_b: str, seed: int = config.SEED) -> list[dict]:
     questions = gen["questions"]
-    n_total = len(questions)
+    categories = gen.get("categories", [""] * len(questions))
     rng = random.Random(seed)
-    sample_idx = sorted(rng.sample(range(n_total), min(N_ARENA_QUESTIONS, n_total)))
+    sample_idx = build_stratified_sample(categories, N_ARENA_QUESTIONS, seed)
 
     answers_a = gen["configs"][config_a]["answers"]
     answers_b = gen["configs"][config_b]["answers"]
@@ -57,6 +104,7 @@ def build_arena_items(gen: dict, config_a: str, config_b: str, seed: int = confi
             {
                 "question_index": i,
                 "question": questions[i],
+                "category": categories[i],
                 "left_answer": left,
                 "right_answer": right,
                 "left_config": left_cfg,  # non affiché à l'annotateur, utilisé pour désanonymiser après export
@@ -102,6 +150,7 @@ def run_app(config_a: str, config_b: str, annotator: str):
             {
                 "annotator": annotator,
                 "question_index": item["question_index"],
+                "category": item["category"],
                 "config_a": config_a,
                 "config_b": config_b,
                 "left_config": item["left_config"],
@@ -237,6 +286,46 @@ def compute_bradley_terry_ranking(pairs: list[tuple[str, str]] = PRIORITY_PAIRS)
         "converged": bool(result.success),
         "note": "config non presente dans une comparaison d'arene = absente du classement (ex: C1 si jamais oppose)",
     }
+
+
+def compute_preference_by_category(config_a: str, config_b: str, annotators: list[str]) -> dict:
+    """Pour chaque catégorie juridique, taux de victoire de config_a / config_b
+    / match nul, tous annotateurs confondus. Répond directement à l'objectif du
+    tirage stratifié : voir humainement quelles catégories semblent le mieux
+    générées par quelle configuration, pas seulement le taux global."""
+    import pandas as pd
+
+    out_dir = config.RESULTS_DIR / "arena_votes"
+    rows = []
+    for ann in annotators:
+        path = out_dir / f"arena_{config_a}_vs_{config_b}_{ann}.csv"
+        if path.exists():
+            rows.append(pd.read_csv(path))
+    if not rows:
+        return {"error": f"aucun vote trouve pour {config_a} vs {config_b}"}
+    df = pd.concat(rows, ignore_index=True)
+
+    def winner(row):
+        if row["choice"] == "tie":
+            return "tie"
+        if row["choice"] == "neither":
+            return "neither"
+        winning_cfg = row["left_config"] if row["choice"] == "left" else row["right_config"]
+        return "a" if winning_cfg == config_a else "b"
+
+    df["winner"] = df.apply(winner, axis=1)
+
+    report = {}
+    for cat, group in df.groupby("category"):
+        counts = group["winner"].value_counts(normalize=True).to_dict()
+        report[cat] = {
+            "n_votes": len(group),
+            f"pct_{config_a}": 100 * counts.get("a", 0.0),
+            f"pct_{config_b}": 100 * counts.get("b", 0.0),
+            "pct_tie": 100 * counts.get("tie", 0.0),
+            "pct_neither": 100 * counts.get("neither", 0.0),
+        }
+    return report
 
 
 def compute_full_agreement_distribution(config_a: str, config_b: str, annotators: list[str]) -> dict:
