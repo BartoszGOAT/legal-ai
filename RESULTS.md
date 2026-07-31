@@ -103,7 +103,14 @@ Recouvrement des passages d'intérêt (entités nommées, nombres, emails, URLs)
 
 ## LLM-as-judge (pertinence)
 
-*(pas encore exécuté / résultats non disponibles)*
+Juge: microsoft/Phi-3.5-mini-instruct · 50 questions · 10 échantillons/réponse (température > 0), moyennés -- un LLM-juge est non-déterministe, un jugement greedy unique est bruyant.
+
+| Config | Pertinence moyenne | Écart-type intra-réponse moyen | Taux de parsing JSON ok |
+|---|---|---|---|
+| C1_zero_shot | 5.000 | 0.000 | 0.922 |
+| C2_rag | 4.850 | 0.048 | 0.878 |
+| C3_finetune | 4.731 | 0.121 | 0.906 |
+| C4_finetune_rag | 4.617 | 0.107 | 0.924 |
 
 ## Régularité de format des identifiants d'article
 
