@@ -295,6 +295,50 @@ def fig_agreement_distribution(config_a: str, config_b: str, annotators: list[st
     print(f"Figure écrite: {out}")
 
 
+def fig_llm_judge_pertinence_distribution():
+    """Barres empilées: distribution des notes de pertinence (1-5) données par
+    le LLM-juge (Phi-3.5), par configuration -- montre que la pertinence
+    moyenne reste haute partout mais qu'une minorité de reponses clairement
+    hors-sujet grossit progressivement de C1 vers C4."""
+    path = RESULTS_DIR / "llm_judge_results.json"
+    if not path.exists():
+        print("llm_judge_results.json absent, figure ignorée")
+        return
+    with open(path) as f:
+        judge = json.load(f)
+
+    cfg_names = list(judge["config_scores"].keys())
+    scores = range(1, 6)
+    pct_by_cfg = {}
+    for cfg in cfg_names:
+        samples = [
+            s["pertinence"]
+            for q in judge["config_scores"][cfg]["per_question"]
+            for s in q["samples"]
+            if s["pertinence"] is not None
+        ]
+        n = len(samples)
+        pct_by_cfg[cfg] = [100 * sum(1 for x in samples if x == s) / n for s in scores]
+
+    fig, ax = plt.subplots(figsize=(8, 4))
+    left = [0.0] * len(cfg_names)
+    colors = {1: "#e34948", 2: "#e34948", 3: "#eda100", 4: "#eb6834", 5: "#1baf7a"}
+    for s in scores:
+        vals = [pct_by_cfg[cfg][s - 1] for cfg in cfg_names]
+        ax.barh(cfg_names, vals, left=left, color=colors[s], label=f"Note {s}/5")
+        left = [l + v for l, v in zip(left, vals)]
+    ax.set_xlabel("% des échantillons jugés")
+    ax.set_xlim(0, 100)
+    ax.set_title("Distribution des notes de pertinence (LLM-juge Phi-3.5) par configuration")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=5, fontsize=8)
+    FIGURES_DIR.mkdir(parents=True, exist_ok=True)
+    out = FIGURES_DIR / "llm_judge_pertinence_distribution.pdf"
+    fig.tight_layout()
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"Figure écrite: {out}")
+
+
 def fig_error_type_distribution():
     """Camembert de la répartition globale des types d'erreur (toutes configs
     confondues) -- vue synthétique complémentaire à la matrice type×config."""
@@ -333,4 +377,5 @@ if __name__ == "__main__":
     fig_learning_curve()
     fig_error_matrix()
     fig_bradley_terry_ranking()
+    fig_llm_judge_pertinence_distribution()
     fig_error_type_distribution()

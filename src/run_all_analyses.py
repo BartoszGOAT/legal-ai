@@ -89,6 +89,7 @@ def run_all():
     make_figures.fig_learning_curve()
     make_figures.fig_error_matrix()
     make_figures.fig_bradley_terry_ranking()
+    make_figures.fig_llm_judge_pertinence_distribution()
     make_figures.fig_error_type_distribution()
     make_tables.table_retrieval()
     make_tables.table_config_description()
