@@ -322,6 +322,18 @@ def render_difficulty_section(result: dict | None) -> str:
     lines.append("")
     lines.append("*(`*` = significatif à p<0.05)*")
     lines.append("")
+    lines.append(
+        "**Interprétation** : la longueur brute de la question n'a quasiment aucun effet "
+        "(non significatif dans 3 configs sur 4). En revanche le nombre d'articles de loi "
+        "nécessaires pour répondre correctement corrèle négativement avec la qualité, de "
+        "façon forte et hautement significative dans les 4 configurations (p < 0.0001 "
+        "partout). C'est le nombre de règles à combiner, pas la longueur du texte, qui "
+        "définit la vraie difficulté d'une question juridique -- et ni le RAG ni le "
+        "fine-tuning ne corrigent ce problème structurel (voir figure "
+        "`difficulty_bucket_rouge.pdf` : le ROUGE-L chute nettement dès 4+ articles requis, "
+        "dans les 4 configs sans exception)."
+    )
+    lines.append("")
     return "\n".join(lines)
 
 

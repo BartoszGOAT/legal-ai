@@ -295,6 +295,47 @@ def fig_agreement_distribution(config_a: str, config_b: str, annotators: list[st
     print(f"Figure écrite: {out}")
 
 
+def fig_difficulty_bucket():
+    """Barres groupées: ROUGE-L moyen par palier de difficulté (nombre d'articles
+    gold requis), pour les 4 configs -- montre que ni le RAG ni le fine-tuning
+    ne compensent la chute de qualité sur les questions necessitant 4+ articles,
+    alors que la longueur de la question seule n'a quasiment pas d'effet
+    (cf. correlation_report dans difficulty_analysis.py)."""
+    path = RESULTS_DIR / "generation_results.json"
+    if not path.exists():
+        print("generation_results.json absent, figure ignorée")
+        return
+    with open(path) as f:
+        gen = json.load(f)
+
+    from . import difficulty_analysis
+
+    df = difficulty_analysis.join_with_generation_results(gen)
+    cfg_names = list(gen["configs"].keys())
+    order = ["1 article", "2-3 articles", "4+ articles"]
+    counts = df["difficulty_bucket"].value_counts().reindex(order)
+    grouped = df.groupby("difficulty_bucket")[[f"{cfg}_rouge_l" for cfg in cfg_names]].mean().reindex(order)
+
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    x = range(len(order))
+    width = 0.8 / len(cfg_names)
+    colors = ["#2a78d6", "#1baf7a", "#eda100", "#4a3aa7"]
+    for i, cfg in enumerate(cfg_names):
+        vals = grouped[f"{cfg}_rouge_l"].values
+        ax.bar([xi + i * width for xi in x], vals, width=width, label=cfg, color=colors[i % len(colors)])
+    ax.set_xticks([xi + width * (len(cfg_names) - 1) / 2 for xi in x])
+    ax.set_xticklabels([f"{b}\n(n={int(counts[b])})" for b in order])
+    ax.set_ylabel("ROUGE-L moyen")
+    ax.set_title("ROUGE-L selon le nombre d'articles nécessaires pour répondre")
+    ax.legend(fontsize=8)
+    FIGURES_DIR.mkdir(parents=True, exist_ok=True)
+    out = FIGURES_DIR / "difficulty_bucket_rouge.pdf"
+    fig.tight_layout()
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"Figure écrite: {out}")
+
+
 def fig_llm_judge_pertinence_distribution():
     """Barres empilées: distribution des notes de pertinence (1-5) données par
     le LLM-juge (Phi-3.5), par configuration -- montre que la pertinence
@@ -377,5 +418,6 @@ if __name__ == "__main__":
     fig_learning_curve()
     fig_error_matrix()
     fig_bradley_terry_ranking()
+    fig_difficulty_bucket()
     fig_llm_judge_pertinence_distribution()
     fig_error_type_distribution()
