@@ -120,7 +120,7 @@ def fig_heatmap_category():
     for i in range(pivot.shape[0]):
         for j in range(pivot.shape[1]):
             ax.text(j, i, f"{pivot.values[i, j]:.3f}", ha="center", va="center", fontsize=8)
-    ax.set_title("ROUGE-L moyen par configuration × catégorie juridique (demande A. Habrard)")
+    ax.set_title("ROUGE-L moyen par configuration × catégorie juridique")
     fig.colorbar(im, label="ROUGE-L")
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     out = FIGURES_DIR / "heatmap_category.pdf"
