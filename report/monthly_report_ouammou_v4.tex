@@ -57,7 +57,7 @@
     A Comparative Study of RAG and Fine-Tuning}
 
     \vspace{0.4cm}
-    {\large Monthly Progress Report -- June/July 2026}
+    {\large Monthly Progress Report -- July/August 2026}
     \vspace{0.6cm}
 
     {\color{darkblue}\rule{\linewidth}{1.5pt}}
@@ -80,7 +80,7 @@
 
     \vspace{1cm}
     \begin{tabular}{rl}
-        \textbf{Advisor:} & Marc Sebban \\[0.3em]
+        \textbf{Advisor:} & Amaury Habrard \\[0.3em]
     \end{tabular}
 \end{titlepage}
 
@@ -91,7 +91,7 @@
 
 \section{What This Month Was About}
 
-The previous report left the project with a first working version of both pipelines and a single comparison between them, run on a small sample of questions. This month was spent going back over almost every part of that first version one piece at a time, checking what still held up under closer scrutiny and what did not, and building the pieces that were still missing, most importantly a proper statistical comparison and a human evaluation. The order below roughly follows the order the work actually happened in, starting with retrieval since everything else in the RAG pipeline depends on it.
+The previous report left the project with a first working version of both pipelines and a single comparison between them, run on a small sample of questions. This month was spent going back over almost every part of that first version one piece at a time, checking carefully what still held up and what did not, and building the pieces that were still missing, most importantly a proper statistical comparison and a human evaluation. The order below roughly follows the order the work actually happened in, starting with retrieval since everything else in the RAG pipeline depends on it.
 
 \section{Going Back Over Retrieval}
 
@@ -297,7 +297,7 @@ Two candidate explanations for why some questions are answered better than other
 \label{fig:difficulty}
 \end{figure}
 
-Quality stays broadly stable for questions needing one to three articles and drops clearly once four or more are needed, in every configuration without exception, and neither retrieval nor fine-tuning corrects this on its own. A simple classifier was also trained to predict, before generation, whether a given question is likely to get a correctly cited answer, using only information available in advance such as question length and category. It separates reliable from unreliable questions considerably better than chance, and the same features driving that prediction, mainly question length and how common the category is in the training data, point toward the same conclusion, that some questions are foreseeably harder before the model ever generates anything.
+Quality stays broadly stable for questions needing one to three articles and drops clearly once four or more are needed, in every configuration without exception, and neither retrieval nor fine-tuning corrects this on its own.
 
 \section{A Domain Specialist Adapter}
 
