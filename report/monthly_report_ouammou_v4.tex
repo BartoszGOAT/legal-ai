@@ -142,7 +142,7 @@ The upgrade helps clearly, Recall@1 roughly triples and the hybrid combination p
 
 The previous fine-tuning result came from a single run, which left open how much of it depended on the particular random seed, or on choices such as the adapter rank or how much training data was used. This month, with a somewhat larger training set available, that single run was turned into a small family of runs changing one thing at a time.
 
-Fine-tuning still works by freezing the base model and adding a small trainable adjustment to a few of its weight matrices rather than retraining the whole network, which is what makes it possible to run on a single consumer GPU. The adapter rank, which controls how large that adjustment is allowed to be, was raised from 16 to 32 this month, trained on 580 questions instead of 380.
+Fine-tuning still works by freezing the base model and adding a small trainable adjustment to a few of its weight matrices rather than retraining the whole network, which is what makes it possible to run on a single consumer GPU. The adapter rank, which controls how large that adjustment is allowed to be, was raised from 16 to 32, trained on 580 questions instead of 380.
 
 \begin{figure}[H]
 \centering
@@ -238,7 +238,7 @@ Oracle context & 0.252 & 0.311 & 0.117 \\
 \label{tab:oracle}
 \end{table}
 
-The gap between real retrieval and this oracle condition is large on citation accuracy, far larger than the gap between real retrieval and no context at all, which means most of what is currently missing comes from retrieval failing to find the right article rather than from the model failing to use a correct one once it has it. One result was not expected going in, the model hallucinates more with real retrieval than with no context whatsoever, as if a wrong but plausible looking article invites more confident invention than having nothing to work from. The same protocol was also run once on Qwen2.5-7B-Instruct instead of Mistral, mainly to check this was not a quirk of one particular model, and the same pattern showed up there too, retrieval helps overall quality while roughly doubling the hallucination rate.
+The gap between real retrieval and this oracle condition is large on citation accuracy, far larger than the gap between real retrieval and no context at all, which means most of what is currently missing comes from retrieval failing to find the right article rather than from the model failing to use a correct one once it has it. One result was not expected going in, the model hallucinates more with real retrieval than with no context whatsoever, as if a wrong but plausible looking article invites more confident invention than having nothing to work from. The same protocol was also run once on Qwen2.5-7B-Instruct instead of Mistral, mainly to check this was not specific to one particular model, and the same pattern showed up there too, retrieval helps overall quality while roughly doubling the hallucination rate.
 
 Retrieval depth was checked as well, since the pipeline had been using five retrieved articles somewhat arbitrarily. Trying one, three and ten articles on a smaller sample showed quality peaking around three, with ten articles doing no better than one despite carrying far more text, suggesting that beyond a certain point extra context makes the relevant article harder to pick out rather than easier.
 
@@ -288,7 +288,7 @@ The average relevance score stays high and close to flat across configurations, 
 
 \section{What Makes a Question Hard}
 
-Two candidate explanations for why some questions are answered better than others were checked directly rather than assumed, how long the question is and how many statutory articles are genuinely needed to answer it. The length of the question turned out to carry almost no relationship with answer quality. The number of articles required, however, correlates clearly and consistently with lower quality across every configuration, so length was the wrong thing to have assumed mattered and the real driver is how many separate rules have to be combined into one answer.
+Two candidate explanations for why some questions are answered better than others were checked directly rather than assumed, how long the question is and how many statutory articles are genuinely needed to answer it. The length of the question turned out to carry almost no relationship with answer quality. The number of articles required, however, correlates clearly and consistently with lower quality across every configuration, so length was the wrong thing to have assumed mattered, what actually matters is how many separate rules have to be combined into one answer.
 
 \begin{figure}[H]
 \centering
@@ -328,9 +328,7 @@ Agreement between the two annotators on the shared questions was moderate rather
 
 \section{Reading Through the Answers}
 
-Beyond the numbers, reading the annotated answers directly surfaced a few patterns worth describing in their own words. The most common mistake is a reversal of legal roles, an obligation placed on the wrong party, often on question pairs that differ by a single word, married against legally cohabiting for instance, where the correct article differs in a subtle way that is easy for both retrieval and generation to miss. Invented statutory text also appears fairly often, and given that hallucination does not fully disappear even under the oracle context condition, at least part of this seems to be a general tendency of the base model rather than purely a consequence of poor retrieval. A smaller number of answers simply drift away from the question asked, usually when a retrieved passage is topically close but does not actually answer what was asked. A last pattern, repeated or cut off text in some answers, looks like a decoding setting issue rather than a modelling limitation, since generation currently uses no repetition penalty.
-
-One limitation raised by the annotators themselves deserves to be said plainly, neither is a trained legal professional, and telling a subtly wrong legal claim apart from a correct one can be genuinely hard to verify from the shortened context shown during annotation.
+Beyond the numbers, reading the annotated answers directly surfaced a few patterns worth describing in their own words. The most common mistake is a reversal of legal roles, an obligation placed on the wrong party, often on question pairs that differ by a single word, married against legally cohabiting for instance, where the correct article differs in a subtle way that is easy for both retrieval and generation to miss. Invented statutory text also appears fairly often, and given that hallucination does not fully disappear even under the oracle context condition, at least part of this seems to be a general tendency of the base model rather than purely a consequence of poor retrieval. A smaller number of answers simply move away from the question asked, usually when a retrieved passage is topically close but does not actually answer what was asked. A last pattern, repeated or cut off text in some answers, looks like a decoding setting issue rather than a modelling limitation, since generation currently uses no repetition penalty.
 
 \section{Practical Difficulties This Month}
 
@@ -338,7 +336,7 @@ As in the previous report, the more time consuming technical problems are listed
 
 \section{What Is Left Before the Final Report}
 
-This report is the last monthly report before the final submission, due on August 19. The third annotator's data collection needs to be finished. What remains is also to build the chatbot interface and to finish writing the final report.
+This report is the last monthly report before the final submission, due on August 20. The third annotator's data collection needs to be finished. What remains is also to build the chatbot interface and to finish writing the final report.
 
 \begin{thebibliography}{9}
 

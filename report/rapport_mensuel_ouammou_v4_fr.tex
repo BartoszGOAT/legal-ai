@@ -142,7 +142,7 @@ Le changement aide clairement, le Recall@1 triple \`a peu pr\`es et la combinais
 
 Le r\'esultat de fine-tuning pr\'ec\'edent venait d'un seul essai, ce qui laissait ouverte la question de savoir combien de ce r\'esultat d\'ependait de la graine al\'eatoire particuli\`ere, ou de choix comme le rang de l'adaptateur ou la quantit\'e de donn\'ees d'entra\^inement utilis\'ee. Ce mois, avec un ensemble d'entra\^inement un peu plus grand disponible, cet essai unique a \'et\'e transform\'e en une petite famille d'essais qui changent un facteur \`a la fois.
 
-Le fine-tuning fonctionne toujours en gelant le mod\`ele de base et en ajoutant un petit ajustement entra\^inable \`a quelques unes de ses matrices de poids plut\^ot qu'en r\'eentra\^inant tout le r\'eseau, ce qui est ce qui rend la proc\'edure possible sur un seul GPU grand public. Le rang de l'adaptateur, qui contr\^ole la taille de cet ajustement, est pass\'e de 16 \`a 32 ce mois, entra\^in\'e sur 580 questions au lieu de 380.
+Le fine-tuning fonctionne toujours en gelant le mod\`ele de base et en ajoutant un petit ajustement entra\^inable \`a quelques unes de ses matrices de poids plut\^ot qu'en r\'eentra\^inant tout le r\'eseau, ce qui est ce qui rend la proc\'edure possible sur un seul GPU grand public. Le rang de l'adaptateur, qui contr\^ole la taille de cet ajustement, est pass\'e de 16 \`a 32, entra\^in\'e sur 580 questions au lieu de 380.
 
 \begin{figure}[H]
 \centering
@@ -330,15 +330,13 @@ L'accord entre les deux annotateurs sur les questions communes \'etait mod\'er\'
 
 Au del\`a des chiffres, lire directement les r\'eponses annot\'ees a fait ressortir quelques sch\'emas qui m\'eritent d'\^etre d\'ecrits avec leurs propres mots. L'erreur la plus courante est une inversion de r\^oles juridiques, une obligation attribu\'ee \`a la mauvaise partie, souvent sur des paires de questions qui ne diff\`erent que d'un mot, mari\'e contre cohabitant l\'egal par exemple, o\`u le bon article diff\`ere d'une fa\c{c}on subtile facile \`a manquer aussi bien pour la recherche que pour la g\'en\'eration. Du texte de loi invent\'e appara\^it aussi assez souvent, et \'etant donn\'e que l'hallucination ne dispara\^it pas compl\`etement m\^eme sous la condition de contexte oracle, une partie au moins de cela semble \^etre une tendance g\'en\'erale du mod\`ele de base plut\^ot que purement une cons\'equence d'une mauvaise recherche. Un nombre plus petit de r\'eponses d\'erive simplement loin de la question pos\'ee, g\'en\'eralement quand un passage retrouv\'e est proche du sujet sans vraiment r\'epondre \`a ce qui \'etait demand\'e. Un dernier sch\'ema, du texte r\'ep\'et\'e ou coup\'e dans certaines r\'eponses, ressemble \`a un probl\`eme de r\'eglage du d\'ecodage plut\^ot qu'\`a une limite du mod\`ele, puisque la g\'en\'eration n'utilise actuellement aucune p\'enalit\'e de r\'ep\'etition.
 
-Une limite soulev\'ee par les annotateurs eux m\^emes m\'erite d'\^etre dite clairement, aucun des deux n'est un professionnel du droit form\'e, et distinguer une affirmation juridique subtilement fausse d'une affirmation correcte peut \^etre vraiment difficile \`a v\'erifier \`a partir du contexte raccourci montr\'e pendant l'annotation.
-
 \section{Difficult\'es pratiques ce mois}
 
 Comme dans le rapport pr\'ec\'edent, les probl\`emes techniques les plus longs \`a r\'esoudre sont list\'es ici bri\`evement. Aucun ensemble de validation n'existait pour le fine-tuning avant ce mois, ce qui rendait impossible de distinguer un mod\`ele qui g\'en\'eralise d'un mod\`ele qui m\'emorise sur quelques centaines d'exemples, et un petit ensemble de validation fixe a \'et\'e ajout\'e sp\'ecifiquement pour combler ce manque.
 
 \section{Ce qui reste avant le rapport final}
 
-Ce rapport est le dernier rapport mensuel avant le rendu final, pr\'evu le 19 ao\^ut. La collecte de donn\'ees du troisi\`eme annotateur doit \^etre termin\'ee. Il reste enfin \`a construire l'interface du chatbot final et \`a terminer la r\'edaction du rapport final.
+Ce rapport est le dernier rapport mensuel avant le rendu final, pr\'evu le 20 ao\^ut. La collecte de donn\'ees du troisi\`eme annotateur doit \^etre termin\'ee. Il reste enfin \`a construire l'interface du chatbot final et \`a terminer la r\'edaction du rapport final.
 
 \begin{thebibliography}{9}
 
