@@ -1,6 +1,6 @@
 {
   "id": "jkrkjenrjr/ter-bsard-chat-app",
-  "title": "TER BSARD Chat App C1-C4",
+  "title": "TER BSARD Chat App C1-C2",
   "code_file": "chat_app_job.py",
   "language": "python",
   "kernel_type": "script",
@@ -11,8 +11,5 @@
   "machine_shape": "NvidiaTeslaT4",
   "dataset_sources": [],
   "competition_sources": [],
-  "kernel_sources": [
-    "jkrkjenrjr/ter-bsard-retrieval-eval",
-    "jkrkjenrjr/ter-bsard-qlora-finetune"
-  ]
+  "kernel_sources": []
 }
