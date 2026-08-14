@@ -41,7 +41,7 @@ def load_generation_results() -> dict:
         raise FileNotFoundError(
             f"{path} absent. L'arène nécessite les réponses générées par le kernel de génération."
         )
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -262,9 +262,21 @@ def run_app(config_a: str, config_b: str, annotator: str | None = None, share: b
     demo.launch(share=share)
 
 
+def _load_votes(path: Path):
+    """Charge un CSV de votes en dédupliquant par question_index (garde le
+    dernier). La sauvegarde incrémentale (cf. vote()) ajoute une ligne à
+    chaque clic sans vérifier si la question a déjà été votée -- un
+    rechargement de page en cours de session peut donc laisser plusieurs
+    votes pour la même question ; seul le plus récent (dernier ajouté) est
+    considéré valide."""
+    import pandas as pd
+
+    df = pd.read_csv(path)
+    return df.drop_duplicates(subset="question_index", keep="last")
+
+
 def compute_inter_annotator_agreement(config_a: str, config_b: str, annotators: list[str]) -> dict:
     """Cohen's Kappa par paire d'annotateurs sur les votes de l'arène."""
-    import pandas as pd
     from sklearn.metrics import cohen_kappa_score
 
     out_dir = config.RESULTS_DIR / "arena_votes"
@@ -272,7 +284,7 @@ def compute_inter_annotator_agreement(config_a: str, config_b: str, annotators: 
     for ann in annotators:
         path = out_dir / f"arena_{config_a}_vs_{config_b}_{ann}.csv"
         if path.exists():
-            dfs[ann] = pd.read_csv(path).set_index("question_index")["choice"]
+            dfs[ann] = _load_votes(path).set_index("question_index")["choice"]
 
     results = {}
     from itertools import combinations
@@ -313,7 +325,7 @@ def compute_bradley_terry_ranking(pairs: list[tuple[str, str]] = PRIORITY_PAIRS)
     n_votes_used = 0
     for config_a, config_b in pairs:
         for path in out_dir.glob(f"arena_{config_a}_vs_{config_b}_*.csv"):
-            df = pd.read_csv(path)
+            df = _load_votes(path)
             for _, row in df.iterrows():
                 if row["choice"] == "neither":
                     continue
@@ -372,7 +384,7 @@ def compute_preference_by_category(config_a: str, config_b: str, annotators: lis
     for ann in annotators:
         path = out_dir / f"arena_{config_a}_vs_{config_b}_{ann}.csv"
         if path.exists():
-            rows.append(pd.read_csv(path))
+            rows.append(_load_votes(path))
     if not rows:
         return {"error": f"aucun vote trouve pour {config_a} vs {config_b}"}
     df = pd.concat(rows, ignore_index=True)
@@ -414,7 +426,7 @@ def compute_full_agreement_distribution(config_a: str, config_b: str, annotators
     for ann in annotators:
         path = out_dir / f"arena_{config_a}_vs_{config_b}_{ann}.csv"
         if path.exists():
-            dfs[ann] = pd.read_csv(path).set_index("question_index")["choice"]
+            dfs[ann] = _load_votes(path).set_index("question_index")["choice"]
 
     if len(dfs) < 3:
         return {"error": f"besoin de {len(annotators)} annotateurs, {len(dfs)} disponibles"}
